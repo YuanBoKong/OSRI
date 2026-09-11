@@ -1,0 +1,59 @@
+server {
+    listen 6002;
+    server_name 10.3.35.21;
+
+    # Vite build 输出目录（你的服务器实际路径）
+    # 目录下应包含：index.html、static/...
+    set $osri_root /data/kongyb/OSRI/system/frontend/dist;
+
+    # 前端应用部署在 /OSRI/ 路径下（与你的 vite.config.js: base='/OSRI/' 对应）
+    location ^~ /OSRI/ {
+        alias $osri_root/;
+        # SPA 路由回退：/OSRI/** 都回到 dist/index.html
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 代理 API：前端请求 /api/**（axios baseURL='/api'）通过 Nginx 转到统一后端
+    # 因为前端部署在 /OSRI/ 下，所以浏览器实际请求会是 /OSRI/api/**
+    location ^~ /OSRI/api/ {
+        # 去掉 /OSRI 前缀，让后端仍按 /api/** 路由匹配
+        rewrite ^/OSRI/api/(.*)$ /api/$1 break;
+        proxy_pass http://127.0.0.1:6001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 代理可视化页面：DataVis 页面中的 iframe 会访问 /osri-vis/
+    location ^~ /osri-vis/ {
+        proxy_pass http://127.0.0.1:6001/osri-vis/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 代理可视化接口：可视化页面通过 /vis-api/api/** 获取数据
+    location ^~ /vis-api/ {
+        proxy_pass http://127.0.0.1:6001/vis-api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 静态资源缓存（建议只对 /OSRI/ 下的静态资源生效）
+    location ~* ^/OSRI/.*\.(js|css|png|jpg|jpeg|gif|ico|svg|map)$ {
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+    }
+
+    # 可选：访问根路径时重定向到 /OSRI/
+    location = / {
+        return 302 /OSRI/;
+    }
+}

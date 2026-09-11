@@ -1,0 +1,2236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Science Indicators Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* 左侧导航栏 */
+        .sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1.4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .nav-item.active {
+            background: rgba(255,255,255,0.15);
+            border-left-color: #667eea;
+        }
+        
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .chart-section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .chart-section h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .export-buttons {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .export-btn {
+            padding: 6px 16px;
+            font-size: 14px;
+            border: 1px solid #667eea;
+            border-radius: 4px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .export-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .export-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 数据选择器 */
+        .data-selector {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .data-selector h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .selector-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            z-index: 100;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .data-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            margin-top: 10px;
+            display: none;
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .data-list.show {
+            display: block !important;
+        }
+        
+        .data-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .data-item:last-child {
+            border-bottom: none;
+        }
+        
+        .data-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .data-item.selected {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .data-item-name {
+            font-weight: 500;
+        }
+        
+        .data-item-file {
+            font-size: 12px;
+            color: #999;
+            margin-top: 2px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        
+        /* 分区柱状图使用自适应高度，保证子图有足够渲染空间 */
+        #tier-bar-chart {
+            height: 80vh; /* 在主内容区占 80% 高度，既然有滚动条 */
+            min-height: 800px; /* 保证子图至少有 350px 左右的高度 */
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+            font-size: 16px;
+        }
+        
+        .error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #f44336;
+            font-size: 16px;
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+            font-size: 16px;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }        
+        .nav-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧导航栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>
+                <span>📌 Open Science</span>
+                <span>Indicators</span>
+                <span>Visualization</span>
+            </h1>
+        </div>
+        <div class="nav-item active" data-chart="dynamic-bar-chart">
+            📊 Country Performance Ranking
+        </div>
+        <div class="nav-item" data-chart="tier-bar-chart">
+            🧩 Tiered Readiness Distribution
+        </div>
+        <div class="nav-item" data-chart="rank-flow-chart">
+            📉 Ranking Trajectory
+        </div>
+        <div class="nav-item" data-chart="line-chart">
+            📈 Top Countries Trend
+        </div>
+        <div class="nav-item" data-chart="continent-bar-chart">
+            🌍 Regional Readiness
+        </div>
+        <div class="nav-item" data-chart="compare-line-chart">
+            🆚 Cross-Country Comparison
+        </div>
+        <!-- 后续可以在这里添加更多导航项 -->
+        <!-- 
+        <div class="nav-item" data-chart="chart2">
+            图表2名称
+        </div>
+        -->
+    </div>
+    
+    <!-- 主内容区 -->
+    <div class="main-content">        
+        <!-- 数据选择器 -->
+        <div class="data-selector">
+            <h3>Select Indicator</h3>
+            <div class="selector-row">
+                <div class="search-box">
+                    <input type="text" id="dataSearch" class="search-input" placeholder="Search or select indicator...">
+                    <span class="search-icon">🔍</span>
+                    <div id="dataList" class="data-list"></div>
+                </div>
+                <button id="showBtn" class="btn" disabled>Display</button>
+            </div>
+            <div id="selectedData" style="margin-top: 10px; color: #666; font-size: 14px;">Click the search box above to view all available indicators</div>
+        </div>
+        
+        <!-- 动态排序柱状图 -->
+        <div class="chart-section" id="dynamic-bar-chart-section">
+            <h2>
+                <span id="chart-title">Open Science Readiness</span>
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportChart('dynamic-bar-chart', 'png')" title="Export as PNG">
+                        📥 PNG
+                    </button>
+                    <button class="export-btn" onclick="exportChart('dynamic-bar-chart', 'html')" title="Export as HTML">
+                        📄 HTML
+                    </button>
+                </div>
+            </h2>
+            <div id="dynamic-bar-chart" class="chart-container">
+                <div class="loading">Loading chart...</div>
+            </div>
+        </div>
+        
+        <!-- 分区柱状图 -->
+        <div class="chart-section" id="tier-bar-chart-section" style="display: none;">
+            <h2>
+                <span id="tier-chart-title">Open Science Readiness - Tiered Bar Chart</span>
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportChart('tier-bar-chart', 'png')" title="Export as PNG">
+                        📥 PNG
+                    </button>
+                    <button class="export-btn" onclick="exportChart('tier-bar-chart', 'html')" title="Export as HTML">
+                        📄 HTML
+                    </button>
+                </div>
+            </h2>
+            <div class="chart-controls" style="margin-bottom: 15px;">
+                <label for="tier-year-select" style="margin-right: 10px;">Select Year:</label>
+                <select id="tier-year-select" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            <div id="tier-bar-chart" class="chart-container">
+                <div class="loading">Loading chart...</div>
+            </div>
+        </div>
+        
+        <!-- 排名变化图 -->
+        <div class="chart-section" id="rank-flow-chart-section" style="display: none;">
+            <h2>
+                <span id="rank-flow-chart-title">Open Science Readiness - Ranking Flow Chart</span>
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportChart('rank-flow-chart', 'png')" title="Export as PNG">
+                        📥 PNG
+                    </button>
+                </div>
+            </h2>
+            <div class="chart-controls" style="margin-bottom: 15px;">
+                <label for="rank-flow-start-year" style="margin-right: 10px;">Select Year Range:</label>
+                <select id="rank-flow-start-year" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;">
+                    <option value="">Start Year</option>
+                </select>
+                <span style="margin-right: 10px;">to</span>
+                <select id="rank-flow-end-year" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">End Year</option>
+                </select>
+            </div>
+            <div id="rank-flow-chart" class="chart-container">
+                <div class="loading">Loading chart...</div>
+            </div>
+        </div>
+        
+        <!-- 折线图 -->
+        <div class="chart-section" id="line-chart-section" style="display: none;">
+            <h2>
+                <span id="line-chart-title">Open Science Readiness - Line Chart</span>
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportChart('line-chart', 'png')" title="Export as PNG">
+                        📥 PNG
+                    </button>
+                    <button class="export-btn" onclick="exportChart('line-chart', 'html')" title="Export as HTML">
+                        📄 HTML
+                    </button>
+                </div>
+            </h2>
+            <div class="chart-controls" style="margin-bottom: 15px;">
+                <label for="line-chart-topn" style="margin-right: 10px;">Select Top N:</label>
+                <select id="line-chart-topn" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; margin-right: 20px;">
+                    <option value="5">Top 5</option>
+                    <option value="10">Top 10</option>
+                    <option value="15" selected>Top 15</option>
+                    <option value="20">Top 20</option>
+                    <option value="25">Top 25</option>
+                    <option value="30">Top 30</option>
+                    <option value="35">Top 35</option>
+                    <option value="40">Top 40</option>
+                </select>
+                <label for="line-chart-start-year" style="margin-right: 10px;">Start Year:</label>
+                <select id="line-chart-start-year" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;">
+                    <option value="">Loading...</option>
+                </select>
+                <span style="margin-right: 10px;">to</span>
+                <select id="line-chart-end-year" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            <div id="line-chart" class="chart-container">
+                <div class="loading">Loading chart...</div>
+            </div>
+        </div>
+        
+        <!-- 大洲柱状图 -->
+        <div class="chart-section" id="continent-bar-chart-section" style="display: none;">
+            <h2>
+                <span id="continent-bar-chart-title">Open Science Readiness - Continental Bar Chart</span>
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportChart('continent-bar-chart', 'png')" title="Export as PNG">
+                        📥 PNG
+                    </button>
+                    <button class="export-btn" onclick="exportChart('continent-bar-chart', 'html')" title="Export as HTML">
+                        📄 HTML
+                    </button>
+                </div>
+            </h2>
+            <div class="chart-controls" style="margin-bottom: 15px;">
+                <label for="continent-year-select" style="margin-right: 10px;">Select Year:</label>
+                <select id="continent-year-select" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; margin-right: 20px;">
+                    <option value="">Loading...</option>
+                </select>
+                <button id="continent-prev-btn" style="padding: 5px 15px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: pointer; margin-right: 10px;">← Previous Continent</button>
+                <span id="continent-info" style="margin-right: 10px; font-size: 14px; color: #666;">1 / 6</span>
+                <button id="continent-next-btn" style="padding: 5px 15px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: pointer;">Next Continent →</button>
+            </div>
+            <div id="continent-bar-chart" class="chart-container">
+                <div class="loading">Loading chart...</div>
+            </div>
+        </div>
+        
+        <!-- 对比折线图 -->
+        <div class="chart-section" id="compare-line-chart-section" style="display: none;">
+            <h2>
+                <span id="compare-line-chart-title">Open Science Readiness - Comparative Line Chart</span>
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportChart('compare-line-chart', 'png')" title="Export as PNG">
+                        📥 PNG
+                    </button>
+                    <button class="export-btn" onclick="exportChart('compare-line-chart', 'html')" title="Export as HTML">
+                        📄 HTML
+                    </button>
+                </div>
+            </h2>
+            <div class="chart-controls" style="margin-bottom: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">Select Countries (Multiple Selection):</label>
+                    <div style="position: relative;">
+                        <input type="text" id="compare-country-search" placeholder="Search countries..." style="width: 100%; padding: 8px 12px; font-size: 14px; border: 2px solid #ddd; border-radius: 6px; outline: none;">
+                        <div id="compare-country-list" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 300px; overflow-y: auto; background: white; border: 2px solid #ddd; border-top: none; border-radius: 0 0 6px 6px; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                        </div>
+                    </div>
+                    <div id="compare-selected-countries" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                        <span style="font-size: 12px; color: #666;">Selected: 0 countries</span>
+                        <button id="compare-clear-btn" style="padding: 4px 12px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; background: white; color: #666; cursor: pointer; margin-left: 10px;">Clear All</button>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div>
+                        <label for="compare-start-year" style="margin-right: 8px; font-weight: 500;">Start Year:</label>
+                        <select id="compare-start-year" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="compare-end-year" style="margin-right: 8px; font-weight: 500;">End Year:</label>
+                        <select id="compare-end-year" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <button id="compare-update-btn" style="padding: 8px 20px; font-size: 14px; border: none; border-radius: 6px; background: #667eea; color: white; cursor: pointer; font-weight: 500;">Update Chart</button>
+                </div>
+            </div>
+            <div id="compare-line-chart" class="chart-container">
+                <div class="loading">Loading chart...</div>
+            </div>
+        </div>
+        
+        <!-- 后续可以在这里添加更多图表 -->
+    </div>
+    
+    <!-- 引入图表JS文件 -->
+    <script src="charts/动态排序柱状图.js"></script>
+    <script src="charts/分区柱状图.js"></script>
+    <script src="charts/排名变化图.js"></script>
+    <script src="charts/折线图.js"></script>
+    <script src="charts/大洲柱状图.js"></script>
+    <script src="charts/对比折线图.js"></script>
+    
+    <script>
+        // 定义API基础路径（全局）
+        // 统一后端模式：可视化接口挂载在同一后端的 /vis-api/api 下
+        (function() {
+            const loc = window.location;
+            if (loc.protocol === 'file:') {
+                // 直接用文件打开 index.html 的情况，回退到本地统一后端
+                window.API_BASE = 'http://127.0.0.1:6001/vis-api/api';
+            } else {
+                window.API_BASE = '/vis-api/api';
+            }
+        })();
+        const API_BASE = window.API_BASE;
+        
+        function normalizeDataSource(value) {
+            return value === 'aggregation' ? 'aggregation' : 'global';
+        }
+
+        function readInitialDataSource() {
+            const queryValue = new URLSearchParams(window.location.search).get('data_source');
+            if (queryValue) {
+                return normalizeDataSource(queryValue);
+            }
+
+            try {
+                return normalizeDataSource(localStorage.getItem('osri_version_mode'));
+            } catch (error) {
+                return 'global';
+            }
+        }
+
+        // 数据源状态（global 或 aggregation）
+        let currentDataSource = readInitialDataSource();
+        
+        let nameMapping = {};
+        let allDataFiles = [];
+        let selectedFilename = null;
+        let selectedName = null;
+        let dynamicBarChart = null;
+        let tierBarChart = null;
+        let rankFlowChart = null;
+        let lineChart = null;
+        let continentBarChart = null;
+        let compareLineChart = null;
+        let currentChartType = 'dynamic-bar-chart'; // 当前选中的图表类型
+        let compareSelectedCountries = []; // 对比折线图选中的国家列表
+        
+        function applyDataSourceRestrictions() {
+            const tierNavItem = document.querySelector('.nav-item[data-chart="tier-bar-chart"]');
+            const continentNavItem = document.querySelector('.nav-item[data-chart="continent-bar-chart"]');
+
+            if (tierNavItem) {
+                if (currentDataSource === 'aggregation') {
+                    tierNavItem.classList.add('disabled');
+                    if (currentChartType === 'tier-bar-chart') {
+                        const firstNavItem = document.querySelector('.nav-item[data-chart="dynamic-bar-chart"]');
+                        if (firstNavItem) {
+                            firstNavItem.click();
+                        }
+                    }
+                } else {
+                    tierNavItem.classList.remove('disabled');
+                }
+            }
+
+            if (continentNavItem) {
+                if (currentDataSource === 'aggregation') {
+                    continentNavItem.classList.add('disabled');
+                    if (currentChartType === 'continent-bar-chart') {
+                        const firstNavItem = document.querySelector('.nav-item[data-chart="dynamic-bar-chart"]');
+                        if (firstNavItem) {
+                            firstNavItem.click();
+                        }
+                    }
+                } else {
+                    continentNavItem.classList.remove('disabled');
+                }
+            }
+        }
+
+        async function syncDataSourceFromExternal(nextDataSource) {
+            const normalizedDataSource = normalizeDataSource(nextDataSource);
+            if (normalizedDataSource === currentDataSource) {
+                return;
+            }
+
+            currentDataSource = normalizedDataSource;
+            applyDataSourceRestrictions();
+
+            if (currentChartType === 'compare-line-chart' && selectedFilename === 'R.json') {
+                compareSelectedCountries = [];
+            }
+
+            nameMapping = {};
+            allDataFiles = [];
+            await loadNameMapping();
+
+            if (selectedFilename) {
+                await loadChartForType(currentChartType, selectedFilename);
+            }
+        }
+        
+        // 获取API URL，自动添加数据源参数
+        function getApiUrl(endpoint, params = {}) {
+            // 处理相对路径
+            let baseUrl;
+            if (endpoint.startsWith('http')) {
+                baseUrl = endpoint;
+            } else if (endpoint.startsWith('/')) {
+                baseUrl = `${API_BASE}${endpoint}`;
+            } else {
+                baseUrl = `${API_BASE}/${endpoint}`;
+            }
+            
+            // 构建URL
+            // 注意：当 API_BASE 是相对路径（如 "/api"）时，new URL() 需要提供 base
+            const url = new URL(baseUrl, window.location.origin);
+            // 添加数据源参数
+            url.searchParams.set('data_source', currentDataSource);
+            // 添加其他参数
+            Object.keys(params).forEach(key => {
+                url.searchParams.set(key, params[key]);
+            });
+            
+            return url.toString();
+        }
+        
+        // 暴露给全局，供图表JS文件使用
+        window.currentDataSource = () => currentDataSource;
+        window.getApiUrl = getApiUrl;
+        window.setCurrentDataSource = syncDataSourceFromExternal;
+
+        window.addEventListener('storage', function(event) {
+            if (event.key === 'osri_version_mode' && event.newValue) {
+                syncDataSourceFromExternal(event.newValue).catch(error => {
+                    console.error('Failed to sync data source from storage:', error);
+                });
+            }
+        });
+
+        window.addEventListener('message', function(event) {
+            const payload = event && event.data;
+            if (!payload || payload.type !== 'osri-version-mode-changed') {
+                return;
+            }
+
+            syncDataSourceFromExternal(payload.mode).catch(error => {
+                console.error('Failed to sync data source from parent message:', error);
+            });
+        });
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            applyDataSourceRestrictions();
+            
+            // 先初始化数据选择器的事件绑定
+            initDataSelector();
+            
+            // 加载name.json映射
+            await loadNameMapping();
+            
+            // 默认加载R.json
+            if (nameMapping && nameMapping['R.json']) {
+                selectedFilename = 'R.json';
+                selectedName = nameMapping['R.json'];
+                const searchInput = document.getElementById('dataSearch');
+                if (searchInput) {
+                    searchInput.value = selectedName;
+                }
+                const selectedDataDiv = document.getElementById('selectedData');
+                if (selectedDataDiv) {
+                    selectedDataDiv.textContent = `Selected: ${selectedName}`;
+                }
+                const showBtn = document.getElementById('showBtn');
+                if (showBtn) {
+                    showBtn.disabled = false;
+                }
+                
+                // 自动加载当前选中的图表类型（默认是柱状图）
+                await loadChartForType(currentChartType, 'R.json');
+            }
+            
+            // 绑定导航事件
+            initNavigation();
+            
+            // 绑定分区柱状图的年份选择事件
+            const tierYearSelect = document.getElementById('tier-year-select');
+            if (tierYearSelect) {
+                tierYearSelect.addEventListener('change', async function() {
+                    const selectedYear = this.value;
+                    if (selectedYear && tierBarChart) {
+                        try {
+                            await tierBarChart.updateConfig({ year: selectedYear });
+                            await tierBarChart.loadData();
+                        } catch (error) {
+                            console.error('Failed to update year:', error);
+                        }
+                    }
+                });
+            }
+            
+            // 绑定排名变化图的年份选择事件
+            const rankFlowStartYear = document.getElementById('rank-flow-start-year');
+            const rankFlowEndYear = document.getElementById('rank-flow-end-year');
+            if (rankFlowStartYear && rankFlowEndYear) {
+                const updateRankFlowChart = async () => {
+                    if (rankFlowChart && rankFlowStartYear.value && rankFlowEndYear.value) {
+                        try {
+                            const startYear = rankFlowStartYear.value;
+                            const endYear = rankFlowEndYear.value;
+                            if (parseInt(startYear) <= parseInt(endYear)) {
+                                await rankFlowChart.updateConfig({ 
+                                    startYear: startYear,
+                                    endYear: endYear
+                                });
+                            }
+                        } catch (error) {
+                            console.error('Failed to update year range:', error);
+                        }
+                    }
+                };
+                rankFlowStartYear.addEventListener('change', updateRankFlowChart);
+                rankFlowEndYear.addEventListener('change', updateRankFlowChart);
+            }
+        });
+        
+        // 加载name.json映射
+        async function loadNameMapping() {
+            try {
+                const url = getApiUrl('/name');
+                console.log('开始加载name.json，API地址:', url);
+                const response = await fetch(url);
+                console.log('响应状态:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('接收到的数据:', data);
+                console.log('数据类型:', typeof data, Array.isArray(data));
+                
+                nameMapping = data;
+                
+                // 构建数据文件列表，保持name.json中的顺序
+                if (typeof nameMapping === 'object' && nameMapping !== null) {
+                    // 直接使用Object.entries保持对象中键的顺序（ES2015+保证）
+                    allDataFiles = Object.entries(nameMapping).map(([filename, name]) => ({
+                        filename,
+                        name: String(name)
+                    }));
+                    // 不排序，保持name.json中的原始顺序
+                    
+                    console.log('成功加载', allDataFiles.length, '个数据文件');
+                    console.log('前5个数据:', allDataFiles.slice(0, 5));
+                    
+                    // 更新提示信息
+                    const selectedDataDiv = document.getElementById('selectedData');
+                    if (selectedDataDiv) {
+                        selectedDataDiv.textContent = `Loaded ${allDataFiles.length} indicators, click the search box to view`;
+                    }
+                } else {
+                    throw new Error('数据格式不正确，期望对象类型');
+                }
+            } catch (error) {
+                console.error('Failed to load name.json:', error);
+                const errorMsg = `Failed to load data mapping: ${error.message}\nPlease check:\n1. Is the API service reachable via /api (Nginx reverse proxy)\n2. Are there any CORS errors in the browser console`;
+                alert(errorMsg);
+                
+                // 显示错误信息
+                const selectedDataDiv = document.getElementById('selectedData');
+                if (selectedDataDiv) {
+                    selectedDataDiv.innerHTML = `<span style="color: #f44336;">Loading failed: ${error.message}</span>`;
+                }
+            }
+        }
+        
+        // 初始化数据选择器
+        function initDataSelector() {
+            const searchInput = document.getElementById('dataSearch');
+            const dataList = document.getElementById('dataList');
+            const showBtn = document.getElementById('showBtn');
+            
+            if (!searchInput || !dataList) {
+                console.error('找不到搜索框或数据列表元素');
+                return;
+            }
+            
+            // 显示列表的函数（点击时直接显示所有列表）
+            function showDataList() {
+                console.log('显示数据列表，当前数据量:', allDataFiles.length);
+                if (allDataFiles.length > 0) {
+                    const keyword = searchInput.value.toLowerCase().trim();
+                    if (keyword) {
+                        // 只根据指标名称过滤，不搜索文件名
+                        const filtered = allDataFiles.filter(item => 
+                            item.name.toLowerCase().includes(keyword)
+                        );
+                        console.log('过滤后数据量:', filtered.length);
+                        renderDataList(filtered);
+                    } else {
+                        // 没有关键词时，显示所有数据
+                        renderDataList(allDataFiles);
+                    }
+                    dataList.classList.add('show');
+                    console.log('列表已显示');
+                } else {
+                    console.warn('Data file list is empty, please check API service');
+                    dataList.innerHTML = '<div class="data-item" style="text-align: center; color: #999;">Loading data, please wait...</div>';
+                    dataList.classList.add('show');
+                }
+            }
+            
+            // 搜索功能（只根据指标名称搜索）
+            searchInput.addEventListener('input', function(e) {
+                console.log('输入事件触发，值:', e.target.value);
+                const keyword = e.target.value.toLowerCase().trim();
+                if (keyword) {
+                    // 只根据指标名称过滤，不搜索文件名
+                    const filtered = allDataFiles.filter(item => 
+                        item.name.toLowerCase().includes(keyword)
+                    );
+                    console.log('过滤结果:', filtered.length, '项');
+                    renderDataList(filtered);
+                    if (filtered.length > 0) {
+                        dataList.classList.add('show');
+                    } else {
+                        dataList.classList.remove('show');
+                    }
+                } else {
+                    // 如果没有关键词，显示所有数据
+                    renderDataList(allDataFiles);
+                    dataList.classList.add('show');
+                }
+            });
+            
+            // 点击输入框时直接显示所有列表
+            searchInput.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('点击输入框');
+                // 清空搜索框，显示所有列表
+                searchInput.value = '';
+                showDataList();
+            });
+            
+            // 聚焦时直接显示所有列表
+            searchInput.addEventListener('focus', function() {
+                console.log('聚焦输入框');
+                // 清空搜索框，显示所有列表
+                searchInput.value = '';
+                showDataList();
+            });
+            
+            // 点击外部关闭列表
+            document.addEventListener('click', function(e) {
+                const searchBox = document.querySelector('.search-box');
+                if (!searchBox) return;
+                
+                const target = e.target;
+                // 如果点击的不是搜索框区域内的元素，则关闭列表
+                if (!searchBox.contains(target)) {
+                    dataList.classList.remove('show');
+                }
+            });
+            
+            // 展示按钮
+            showBtn.addEventListener('click', async function() {
+                if (selectedFilename) {
+                    this.disabled = true;
+                        this.textContent = 'Loading...';
+                    try {
+                        await showChart(selectedFilename);
+                    } finally {
+                        this.disabled = false;
+                        this.textContent = 'Display';
+                    }
+                } else {
+                    alert('Please select a data indicator first');
+                }
+            });
+        }
+        
+        // 渲染数据列表
+        function renderDataList(files) {
+            const dataList = document.getElementById('dataList');
+            if (!dataList) {
+                console.error('找不到dataList元素');
+                return;
+            }
+            
+            console.log('渲染数据列表，数量:', files.length);
+            dataList.innerHTML = '';
+            
+            if (!files || files.length === 0) {
+                const emptyItem = document.createElement('div');
+                emptyItem.className = 'data-item';
+                emptyItem.style.textAlign = 'center';
+                emptyItem.style.color = '#999';
+                emptyItem.textContent = 'No matching data found';
+                dataList.appendChild(emptyItem);
+                return;
+            }
+            
+            files.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'data-item';
+                if (selectedFilename === file.filename) {
+                    item.classList.add('selected');
+                }
+                item.innerHTML = `
+                    <div class="data-item-name">${file.name}</div>
+                `;
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    console.log('选择数据:', file.name, file.filename);
+                    selectedFilename = file.filename;
+                    selectedName = file.name;
+                    const searchInput = document.getElementById('dataSearch');
+                    if (searchInput) {
+                        searchInput.value = file.name;
+                    }
+                    const selectedDataDiv = document.getElementById('selectedData');
+                    if (selectedDataDiv) {
+                        selectedDataDiv.textContent = `Selected: ${file.name}`;
+                    }
+                    const showBtn = document.getElementById('showBtn');
+                    if (showBtn) {
+                        showBtn.disabled = false;
+                    }
+                    dataList.classList.remove('show');
+                    // 更新当前列表的选中状态
+                    renderDataList(files);
+                });
+                dataList.appendChild(item);
+            });
+            
+            console.log('列表渲染完成，共', files.length, '项');
+        }
+        
+        // 显示图表（根据当前选中的图表类型）
+        async function showChart(filename) {
+            await loadChartForType(currentChartType, filename);
+        }
+        
+        // 根据图表类型加载图表
+        async function loadChartForType(chartType, filename) {
+            try {
+                const name = nameMapping[filename] || filename;
+                
+                if (chartType === 'dynamic-bar-chart') {
+                    const chartContainer = document.getElementById('dynamic-bar-chart');
+                    const chartTitle = document.getElementById('chart-title');
+                    
+                    chartTitle.textContent = name;
+                    chartContainer.innerHTML = '<div class="loading">Loading data...</div>';
+                    
+                    // 获取2024年排名前15的国家
+                    const topCountriesResponse = await fetch(getApiUrl(`/data/${filename}/top-countries`, { year: '2024', top_n: '15' }));
+                    if (!topCountriesResponse.ok) {
+                        const errorData = await topCountriesResponse.json().catch(() => ({}));
+                        throw new Error(errorData.detail || 'Failed to get ranking countries');
+                    }
+                    const topCountriesData = await topCountriesResponse.json();
+                    
+                    if (!topCountriesData.countries || topCountriesData.countries.length === 0) {
+                        throw new Error('No data found for 2024');
+                    }
+                    
+                    // 销毁旧图表
+                    if (dynamicBarChart) {
+                        try {
+                            dynamicBarChart.destroy();
+                        } catch (e) {
+                            console.warn('销毁旧柱状图时出错（可忽略）:', e);
+                        }
+                        dynamicBarChart = null;
+                    }
+                    
+                    chartContainer.innerHTML = '';
+                    
+                    // 创建新图表
+                    dynamicBarChart = new DynamicBarChart({
+                        containerId: 'dynamic-bar-chart',
+                        autoPlay: true,
+                        countries: topCountriesData.countries,
+                        startYear: '2014',
+                        endYear: '2024',
+                        filename: filename
+                    });
+                    
+                    window.dynamicBarChart = dynamicBarChart;
+                    console.log('柱状图加载成功:', name);
+                    
+                } else if (chartType === 'tier-bar-chart') {
+                    const chartContainer = document.getElementById('tier-bar-chart');
+                    const chartTitle = document.getElementById('tier-chart-title');
+                    const yearSelect = document.getElementById('tier-year-select');
+                    
+                    chartTitle.textContent = name + ' - Tiered Bar Chart';
+                    chartContainer.innerHTML = '<div class="loading">Loading data...</div>';
+                    
+                    // 加载年份列表
+                    await loadYearsForTierChart(filename, yearSelect);
+                    
+                    // 销毁旧图表
+                    if (tierBarChart) {
+                        try {
+                            tierBarChart.destroy();
+                        } catch (e) {
+                            console.warn('销毁旧分区柱状图时出错（可忽略）:', e);
+                        }
+                        tierBarChart = null;
+                    }
+                    
+                    chartContainer.innerHTML = '';
+                    
+                    // 创建新图表（使用默认年份，稍后会在年份选择后更新）
+                    if (typeof TierBarChart !== 'undefined') {
+                        // 先获取默认年份
+                        const defaultYear = yearSelect.value || '2024';
+                        tierBarChart = new TierBarChart({
+                            containerId: 'tier-bar-chart',
+                            filename: filename,
+                            year: defaultYear,
+                            name: name // 传递指标名称
+                        });
+                        
+                        window.tierBarChart = tierBarChart;
+                        console.log('分区柱状图加载成功:', name);
+                    } else {
+                        throw new Error('TierBarChart is not defined, please check if JS file is loaded');
+                    }
+                } else if (chartType === 'rank-flow-chart') {
+                    const chartContainer = document.getElementById('rank-flow-chart');
+                    const chartTitle = document.getElementById('rank-flow-chart-title');
+                    const startYearSelect = document.getElementById('rank-flow-start-year');
+                    const endYearSelect = document.getElementById('rank-flow-end-year');
+                    
+                    chartTitle.textContent = name + ' - Ranking Flow Chart';
+                    chartContainer.innerHTML = '<div class="loading">Loading data...</div>';
+                    
+                    // 加载年份列表
+                    await loadYearsForRankFlowChart(filename, startYearSelect, endYearSelect);
+                    
+                    // 获取2024年排名前15的国家
+                    const topCountriesResponse = await fetch(getApiUrl(`/data/${filename}/top-countries`, { year: '2024', top_n: '15' }));
+                    if (!topCountriesResponse.ok) {
+                        const errorData = await topCountriesResponse.json().catch(() => ({}));
+                        throw new Error(errorData.detail || 'Failed to get ranking countries');
+                    }
+                    const topCountriesData = await topCountriesResponse.json();
+                    
+                    if (!topCountriesData.countries || topCountriesData.countries.length === 0) {
+                        throw new Error('No data found for 2024');
+                    }
+                    
+                    // 销毁旧图表
+                    if (rankFlowChart) {
+                        try {
+                            rankFlowChart.destroy();
+                        } catch (e) {
+                            console.warn('销毁旧排名变化图时出错（可忽略）:', e);
+                        }
+                        rankFlowChart = null;
+                    }
+                    
+                    chartContainer.innerHTML = '';
+                    
+                    // 创建新图表
+                    if (typeof RankFlowChart !== 'undefined') {
+                        // 获取年份范围
+                        const startYear = startYearSelect.value || '2014';
+                        const endYear = endYearSelect.value || '2024';
+                        
+                        rankFlowChart = new RankFlowChart({
+                            containerId: 'rank-flow-chart',
+                            filename: filename,
+                            topCountries: topCountriesData.countries,
+                            startYear: startYear,
+                            endYear: endYear,
+                            displayLimit: 26,
+                            title: name + ' - Ranking Flow'
+                        });
+                        
+                        window.rankFlowChart = rankFlowChart;
+                        console.log('排名变化图加载成功:', name);
+                    } else {
+                        throw new Error('RankFlowChart is not defined, please check if JS file is loaded');
+                    }
+                } else if (chartType === 'line-chart') {
+                    const chartContainer = document.getElementById('line-chart');
+                    const chartTitle = document.getElementById('line-chart-title');
+                    const topNSelect = document.getElementById('line-chart-topn');
+                    const startYearSelect = document.getElementById('line-chart-start-year');
+                    const endYearSelect = document.getElementById('line-chart-end-year');
+                    
+                    chartTitle.textContent = name + ' - Line Chart';
+                    chartContainer.innerHTML = '<div class="loading">Loading data...</div>';
+                    
+                    // 加载年份列表
+                    await loadYearsForLineChart(filename, startYearSelect, endYearSelect);
+                    
+                    // 获取默认值
+                    const topN = parseInt(topNSelect.value) || 15;
+                    const startYear = startYearSelect.value || '2014';
+                    const endYear = endYearSelect.value || '2024';
+                    
+                    // 销毁旧图表
+                    if (lineChart) {
+                        try {
+                            lineChart.destroy();
+                        } catch (e) {
+                            console.warn('销毁旧折线图时出错（可忽略）:', e);
+                        }
+                        lineChart = null;
+                    }
+                    
+                    chartContainer.innerHTML = '';
+                    
+                    // 创建新图表
+                    if (typeof LineChart !== 'undefined') {
+                        lineChart = new LineChart({
+                            containerId: 'line-chart',
+                            filename: filename,
+                            topN: topN,
+                            startYear: startYear,
+                            endYear: endYear,
+                            title: name + ' - Line Chart'
+                        });
+                        
+                        window.lineChart = lineChart;
+                        console.log('折线图加载成功:', name);
+                        
+                        // 绑定事件监听器（移除旧的监听器以避免重复绑定）
+                        const oldTopNHandler = topNSelect._lineChartHandler;
+                        const oldStartYearHandler = startYearSelect._lineChartHandler;
+                        const oldEndYearHandler = endYearSelect._lineChartHandler;
+                        
+                        if (oldTopNHandler) topNSelect.removeEventListener('change', oldTopNHandler);
+                        if (oldStartYearHandler) startYearSelect.removeEventListener('change', oldStartYearHandler);
+                        if (oldEndYearHandler) endYearSelect.removeEventListener('change', oldEndYearHandler);
+                        
+                        const topNHandler = async function() {
+                            const newTopN = parseInt(this.value);
+                            const newStartYear = startYearSelect.value || '2014';
+                            const newEndYear = endYearSelect.value || '2024';
+                            if (lineChart) {
+                                await lineChart.updateConfig({
+                                    topN: newTopN,
+                                    startYear: newStartYear,
+                                    endYear: newEndYear
+                                });
+                            }
+                        };
+                        
+                        const startYearHandler = async function() {
+                            const newTopN = parseInt(topNSelect.value) || 15;
+                            const newStartYear = this.value || '2014';
+                            const newEndYear = endYearSelect.value || '2024';
+                            if (lineChart) {
+                                await lineChart.updateConfig({
+                                    topN: newTopN,
+                                    startYear: newStartYear,
+                                    endYear: newEndYear
+                                });
+                            }
+                        };
+                        
+                        const endYearHandler = async function() {
+                            const newTopN = parseInt(topNSelect.value) || 15;
+                            const newStartYear = startYearSelect.value || '2014';
+                            const newEndYear = this.value || '2024';
+                            if (lineChart) {
+                                await lineChart.updateConfig({
+                                    topN: newTopN,
+                                    startYear: newStartYear,
+                                    endYear: newEndYear
+                                });
+                            }
+                        };
+                        
+                        topNSelect._lineChartHandler = topNHandler;
+                        startYearSelect._lineChartHandler = startYearHandler;
+                        endYearSelect._lineChartHandler = endYearHandler;
+                        
+                        topNSelect.addEventListener('change', topNHandler);
+                        startYearSelect.addEventListener('change', startYearHandler);
+                        endYearSelect.addEventListener('change', endYearHandler);
+                    } else {
+                        throw new Error('LineChart is not defined, please check if JS file is loaded');
+                    }
+                } else if (chartType === 'continent-bar-chart') {
+                    const chartContainer = document.getElementById('continent-bar-chart');
+                    const chartTitle = document.getElementById('continent-bar-chart-title');
+                    const yearSelect = document.getElementById('continent-year-select');
+                    const prevBtn = document.getElementById('continent-prev-btn');
+                    const nextBtn = document.getElementById('continent-next-btn');
+                    const continentInfo = document.getElementById('continent-info');
+                    
+                    chartTitle.textContent = name + ' - Continental Bar Chart';
+                    chartContainer.innerHTML = '<div class="loading">Loading data...</div>';
+                    
+                    // 加载年份列表
+                    await loadYearsForContinentChart(filename, yearSelect);
+                    
+                    // 销毁旧图表
+                    if (continentBarChart) {
+                        try {
+                            continentBarChart.destroy();
+                        } catch (e) {
+                            console.warn('销毁旧大洲柱状图时出错（可忽略）:', e);
+                        }
+                        continentBarChart = null;
+                    }
+                    
+                    chartContainer.innerHTML = '';
+                    
+                    // 创建新图表
+                    if (typeof ContinentBarChart !== 'undefined') {
+                        const defaultYear = yearSelect.value || '2024';
+                        continentBarChart = new ContinentBarChart({
+                            containerId: 'continent-bar-chart',
+                            filename: filename,
+                            year: defaultYear,
+                            name: name
+                        });
+                        
+                        window.continentBarChart = continentBarChart;
+                        console.log('大洲柱状图加载成功:', name);
+                        
+                        // 更新大洲信息显示
+                        updateContinentInfo();
+                        
+                        // 绑定事件监听器
+                        const oldYearHandler = yearSelect._continentChartHandler;
+                        if (oldYearHandler) yearSelect.removeEventListener('change', oldYearHandler);
+                        
+                        const yearHandler = async function() {
+                            const newYear = this.value || '2024';
+                            if (continentBarChart) {
+                                await continentBarChart.updateConfig({
+                                    year: newYear
+                                });
+                                updateContinentInfo();
+                            }
+                        };
+                        
+                        yearSelect._continentChartHandler = yearHandler;
+                        yearSelect.addEventListener('change', yearHandler);
+                        
+                        // 绑定翻页按钮
+                        const oldPrevHandler = prevBtn._continentChartHandler;
+                        const oldNextHandler = nextBtn._continentChartHandler;
+                        if (oldPrevHandler) prevBtn.removeEventListener('click', oldPrevHandler);
+                        if (oldNextHandler) nextBtn.removeEventListener('click', oldNextHandler);
+                        
+                        const prevHandler = function() {
+                            if (continentBarChart) {
+                                continentBarChart.prevContinent();
+                                updateContinentInfo();
+                            }
+                        };
+                        
+                        const nextHandler = function() {
+                            if (continentBarChart) {
+                                continentBarChart.nextContinent();
+                                updateContinentInfo();
+                            }
+                        };
+                        
+                        prevBtn._continentChartHandler = prevHandler;
+                        nextBtn._continentChartHandler = nextHandler;
+                        prevBtn.addEventListener('click', prevHandler);
+                        nextBtn.addEventListener('click', nextHandler);
+                    } else {
+                        throw new Error('ContinentBarChart is not defined, please check if JS file is loaded');
+                    }
+                } else if (chartType === 'compare-line-chart') {
+                    const chartContainer = document.getElementById('compare-line-chart');
+                    const chartTitle = document.getElementById('compare-line-chart-title');
+                    const countrySearch = document.getElementById('compare-country-search');
+                    const countryList = document.getElementById('compare-country-list');
+                    const selectedCountriesDiv = document.getElementById('compare-selected-countries');
+                    const startYearSelect = document.getElementById('compare-start-year');
+                    const endYearSelect = document.getElementById('compare-end-year');
+                    const updateBtn = document.getElementById('compare-update-btn');
+                    
+                    chartTitle.textContent = name + ' - Comparative Line Chart';
+                    chartContainer.innerHTML = '<div class="loading">Loading chart...</div>';
+                    
+                    // 加载年份列表
+                    await loadYearsForCompareChart(filename, startYearSelect, endYearSelect);
+                    
+                    // 销毁旧图表
+                    if (compareLineChart) {
+                        try {
+                            compareLineChart.destroy();
+                        } catch (e) {
+                            console.warn('销毁旧对比折线图时出错（可忽略）:', e);
+                        }
+                        compareLineChart = null;
+                    }
+                    
+                    chartContainer.innerHTML = '';
+                    
+                    // 如果是R.json且没有选择国家，根据数据源设置默认国家
+                    let defaultCountries;
+                    if (currentDataSource === 'aggregation') {
+                        defaultCountries = ['STLCs', 'EU27', 'China', 'Germany', 'India', 'Japan', 'Russia', 'United Kingdom', 'United States'];
+                    } else {
+                        defaultCountries = ['United States', 'China', 'United Kingdom', 'Germany', 'France', 'Australia', 'Canada', 'Spain'];
+                    }
+                    if (filename === 'R.json' && compareSelectedCountries.length === 0) {
+                        compareSelectedCountries = [...defaultCountries];
+                    }
+                    
+                    // 创建新图表
+                    if (typeof CompareLineChart !== 'undefined') {
+                        compareLineChart = new CompareLineChart({
+                            containerId: 'compare-line-chart',
+                            filename: filename,
+                            countries: compareSelectedCountries,
+                            startYear: startYearSelect.value || '2014',
+                            endYear: endYearSelect.value || '2024',
+                            name: name
+                        });
+                        
+                        window.compareLineChart = compareLineChart;
+                        console.log('对比折线图加载成功:', name);
+                        
+                        // 初始化国家选择器
+                        await initCompareCountrySelector(compareLineChart, countrySearch, countryList, selectedCountriesDiv);
+                        
+                        // 如果有默认国家，自动加载数据
+                        if (compareSelectedCountries.length > 0) {
+                            await compareLineChart.loadData();
+                        }
+                        
+                        // 绑定更新按钮
+                        const oldUpdateHandler = updateBtn._compareChartHandler;
+                        if (oldUpdateHandler) updateBtn.removeEventListener('click', oldUpdateHandler);
+                        
+                        const updateHandler = async function() {
+                            const startYear = startYearSelect.value || '2014';
+                            const endYear = endYearSelect.value || '2024';
+                            if (compareLineChart && compareSelectedCountries.length > 0) {
+                                await compareLineChart.updateConfig({
+                                    countries: compareSelectedCountries,
+                                    startYear: startYear,
+                                    endYear: endYear
+                                });
+                            }
+                        };
+                        
+                        updateBtn._compareChartHandler = updateHandler;
+                        updateBtn.addEventListener('click', updateHandler);
+                        
+                        // 绑定清空按钮
+                        const clearBtn = document.getElementById('compare-clear-btn');
+                        if (clearBtn) {
+                            const oldClearHandler = clearBtn._compareChartHandler;
+                            if (oldClearHandler) clearBtn.removeEventListener('click', oldClearHandler);
+                            
+                            const clearHandler = function() {
+                                compareSelectedCountries = [];
+                                updateSelectedCountriesDisplay(selectedCountriesDiv);
+                                // 重新渲染国家列表
+                                if (countrySearch._renderCountryList) {
+                                    countrySearch._renderCountryList(countrySearch.value.trim());
+                                }
+                                // 清空图表
+                                if (compareLineChart) {
+                                    compareLineChart.showEmptyChart();
+                                }
+                            };
+                            
+                            clearBtn._compareChartHandler = clearHandler;
+                            clearBtn.addEventListener('click', clearHandler);
+                        }
+                    } else {
+                        throw new Error('CompareLineChart is not defined, please check if JS file is loaded');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load chart:', error);
+                let chartContainer = null;
+                if (chartType === 'dynamic-bar-chart') {
+                    chartContainer = document.getElementById('dynamic-bar-chart');
+                } else if (chartType === 'tier-bar-chart') {
+                    chartContainer = document.getElementById('tier-bar-chart');
+                } else if (chartType === 'rank-flow-chart') {
+                    chartContainer = document.getElementById('rank-flow-chart');
+                } else if (chartType === 'line-chart') {
+                    chartContainer = document.getElementById('line-chart');
+                } else if (chartType === 'continent-bar-chart') {
+                    chartContainer = document.getElementById('continent-bar-chart');
+                } else if (chartType === 'compare-line-chart') {
+                    chartContainer = document.getElementById('compare-line-chart');
+                }
+                if (chartContainer) {
+                    chartContainer.innerHTML = `<div class="error">Loading failed: ${error.message}</div>`;
+                }
+            }
+        }
+        
+        // 初始化导航
+        function initNavigation() {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // 移除所有active
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    // 添加当前active
+                    this.classList.add('active');
+                    
+                    // 切换显示的内容
+                    const chartId = this.getAttribute('data-chart');
+                    currentChartType = chartId;
+                    
+                    // 隐藏所有图表区域
+                    document.querySelectorAll('.chart-section').forEach(section => {
+                        section.style.display = 'none';
+                    });
+                    
+                    // 显示选中的图表区域
+                    const targetSection = document.getElementById(chartId + '-section');
+                    if (targetSection) {
+                        targetSection.style.display = 'block';
+                        
+                        // 如果图表还没有加载，则加载它
+                        if (selectedFilename) {
+                            loadChartForType(chartId, selectedFilename);
+                        }
+                    }
+                });
+            });
+        }
+    /**
+     * 加载年份列表到分区柱状图的年份选择器
+     */
+    async function loadYearsForTierChart(filename, yearSelect) {
+        try {
+            const response = await fetch(getApiUrl(`/data/${filename}/years`));
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const years = data.years || [];
+            
+            // 清空并填充年份选择器
+            yearSelect.innerHTML = '';
+            if (years.length === 0) {
+                yearSelect.innerHTML = '<option value="">无可用年份</option>';
+                return;
+            }
+            
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+            
+            // 默认选择最新年份
+            if (years.length > 0) {
+                yearSelect.value = years[years.length - 1];
+            }
+        } catch (error) {
+            console.error('Failed to load year list:', error);
+            yearSelect.innerHTML = '<option value="">加载失败</option>';
+        }
+    }
+    
+    /**
+     * 加载年份列表到排名变化图的年份选择器
+     */
+    async function loadYearsForLineChart(filename, startYearSelect, endYearSelect) {
+        try {
+            const response = await fetch(getApiUrl(`/data/${filename}/years`));
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const years = data.years || [];
+            
+            // 清空并填充年份选择器
+            startYearSelect.innerHTML = '<option value="">Start Year</option>';
+            endYearSelect.innerHTML = '<option value="">End Year</option>';
+            
+            if (years.length === 0) {
+                startYearSelect.innerHTML = '<option value="">No available years</option>';
+                endYearSelect.innerHTML = '<option value="">No available years</option>';
+                return;
+            }
+            
+            years.forEach(year => {
+                const option1 = document.createElement('option');
+                option1.value = year;
+                option1.textContent = year;
+                startYearSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = year;
+                option2.textContent = year;
+                endYearSelect.appendChild(option2);
+            });
+            
+            // 设置默认值
+            if (years.length > 0) {
+                const defaultStart = years[0];
+                const defaultEnd = years[years.length - 1];
+                startYearSelect.value = defaultStart;
+                endYearSelect.value = defaultEnd;
+            }
+        } catch (error) {
+            console.error('Failed to load year list:', error);
+            startYearSelect.innerHTML = '<option value="">Loading failed</option>';
+            endYearSelect.innerHTML = '<option value="">Loading failed</option>';
+        }
+    }
+    
+    async function loadYearsForRankFlowChart(filename, startYearSelect, endYearSelect) {
+        try {
+            const response = await fetch(getApiUrl(`/data/${filename}/years`));
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const years = data.years || [];
+            
+            // 清空并填充年份选择器
+            startYearSelect.innerHTML = '<option value="">Start Year</option>';
+            endYearSelect.innerHTML = '<option value="">End Year</option>';
+            
+            if (years.length === 0) {
+                startYearSelect.innerHTML = '<option value="">No available years</option>';
+                endYearSelect.innerHTML = '<option value="">No available years</option>';
+                return;
+            }
+            
+            years.forEach(year => {
+                const option1 = document.createElement('option');
+                option1.value = year;
+                option1.textContent = year;
+                startYearSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = year;
+                option2.textContent = year;
+                endYearSelect.appendChild(option2);
+            });
+            
+            // 默认选择2014到2024
+            if (years.length > 0) {
+                const startIdx = years.indexOf('2014') >= 0 ? years.indexOf('2014') : 0;
+                const endIdx = years.indexOf('2024') >= 0 ? years.indexOf('2024') : years.length - 1;
+                startYearSelect.value = years[startIdx];
+                endYearSelect.value = years[endIdx];
+            }
+        } catch (error) {
+            console.error('Failed to load year list:', error);
+            startYearSelect.innerHTML = '<option value="">Loading failed</option>';
+            endYearSelect.innerHTML = '<option value="">Loading failed</option>';
+        }
+    }
+    
+    async function loadYearsForContinentChart(filename, yearSelect) {
+        try {
+            const response = await fetch(getApiUrl(`/data/${filename}/years`));
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const years = data.years || [];
+            
+            // 清空并填充年份选择器
+            yearSelect.innerHTML = '<option value="">选择年份</option>';
+            
+            if (years.length === 0) {
+                yearSelect.innerHTML = '<option value="">无可用年份</option>';
+                return;
+            }
+            
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+            
+            // 设置默认值（最新年份）
+            if (years.length > 0) {
+                yearSelect.value = years[years.length - 1];
+            }
+        } catch (error) {
+            console.error('Failed to load year list:', error);
+            yearSelect.innerHTML = '<option value="">加载失败</option>';
+        }
+    }
+    
+    function updateContinentInfo() {
+        if (continentBarChart && typeof CONTINENT_NAMES !== 'undefined') {
+            const info = continentBarChart.getCurrentContinent();
+            const continentInfo = document.getElementById('continent-info');
+            if (continentInfo) {
+                continentInfo.textContent = `${info.chineseName} (${info.index + 1} / ${info.total})`;
+            }
+            
+            // 更新按钮状态
+            const prevBtn = document.getElementById('continent-prev-btn');
+            const nextBtn = document.getElementById('continent-next-btn');
+            if (prevBtn) {
+                prevBtn.disabled = info.index === 0;
+                prevBtn.style.opacity = info.index === 0 ? '0.5' : '1';
+                prevBtn.style.cursor = info.index === 0 ? 'not-allowed' : 'pointer';
+            }
+            if (nextBtn) {
+                nextBtn.disabled = info.index === info.total - 1;
+                nextBtn.style.opacity = info.index === info.total - 1 ? '0.5' : '1';
+                nextBtn.style.cursor = info.index === info.total - 1 ? 'not-allowed' : 'pointer';
+            }
+        }
+    }
+    
+    async function loadYearsForCompareChart(filename, startYearSelect, endYearSelect) {
+        try {
+            const response = await fetch(getApiUrl(`/data/${filename}/years`));
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const years = data.years || [];
+            
+            // 清空并填充年份选择器
+            startYearSelect.innerHTML = '<option value="">Start Year</option>';
+            endYearSelect.innerHTML = '<option value="">End Year</option>';
+            
+            if (years.length === 0) {
+                startYearSelect.innerHTML = '<option value="">No available years</option>';
+                endYearSelect.innerHTML = '<option value="">No available years</option>';
+                return;
+            }
+            
+            years.forEach(year => {
+                const option1 = document.createElement('option');
+                option1.value = year;
+                option1.textContent = year;
+                startYearSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = year;
+                option2.textContent = year;
+                endYearSelect.appendChild(option2);
+            });
+            
+            // 设置默认值
+            if (years.length > 0) {
+                const defaultStart = years[0];
+                const defaultEnd = years[years.length - 1];
+                startYearSelect.value = defaultStart;
+                endYearSelect.value = defaultEnd;
+            }
+        } catch (error) {
+            console.error('Failed to load year list:', error);
+            startYearSelect.innerHTML = '<option value="">Loading failed</option>';
+            endYearSelect.innerHTML = '<option value="">Loading failed</option>';
+        }
+    }
+    
+    // 更新已选择国家显示（全局函数）
+    function updateSelectedCountriesDisplay(selectedDiv) {
+        if (!selectedDiv) {
+            selectedDiv = document.getElementById('compare-selected-countries');
+        }
+        if (!selectedDiv) return;
+        
+        // 清空内容，但保留按钮
+        const clearBtn = document.getElementById('compare-clear-btn');
+        const clearBtnHTML = clearBtn ? clearBtn.outerHTML : '<button id="compare-clear-btn" style="padding: 4px 12px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; background: white; color: #666; cursor: pointer; margin-left: 10px;">Clear All</button>';
+        
+        selectedDiv.innerHTML = '';
+        
+        // 添加已选择数量显示
+        const countSpan = document.createElement('span');
+        countSpan.style.cssText = 'font-size: 12px; color: #666; margin-right: 8px;';
+        countSpan.textContent = `Selected: ${compareSelectedCountries.length} countries`;
+        selectedDiv.appendChild(countSpan);
+        
+        // 添加已选择国家的标签
+        compareSelectedCountries.forEach(country => {
+            const tag = document.createElement('span');
+            tag.style.cssText = 'display: inline-flex; align-items: center; padding: 4px 10px; background: #667eea; color: white; border-radius: 12px; font-size: 12px; margin-right: 6px;';
+            // 转义单引号以避免JavaScript错误
+            const escapedCountry = country.replace(/'/g, "\\'");
+            tag.innerHTML = country + ' <span style="margin-left: 6px; cursor: pointer; font-weight: bold;" onclick="removeCompareCountry(\'' + escapedCountry + '\')">×</span>';
+            selectedDiv.appendChild(tag);
+        });
+        
+        // 添加清空按钮
+        selectedDiv.insertAdjacentHTML('beforeend', clearBtnHTML);
+        
+        // 重新绑定清空按钮事件
+        const newClearBtn = document.getElementById('compare-clear-btn');
+        if (newClearBtn) {
+            const oldClearHandler = newClearBtn._compareChartHandler;
+            if (oldClearHandler) newClearBtn.removeEventListener('click', oldClearHandler);
+            
+            const clearHandler = function() {
+                compareSelectedCountries = [];
+                updateSelectedCountriesDisplay(selectedDiv);
+                // 重新渲染国家列表
+                const countrySearch = document.getElementById('compare-country-search');
+                if (countrySearch && countrySearch._renderCountryList) {
+                    countrySearch._renderCountryList(countrySearch.value.trim());
+                }
+                // 清空图表
+                if (compareLineChart) {
+                    compareLineChart.showEmptyChart();
+                }
+            };
+            
+            newClearBtn._compareChartHandler = clearHandler;
+            newClearBtn.addEventListener('click', clearHandler);
+        }
+    }
+    
+    window.updateSelectedCountriesDisplay = updateSelectedCountriesDisplay;
+    
+    async function initCompareCountrySelector(chart, searchInput, listDiv, selectedDiv) {
+        // 获取大洲数据
+        const continentData = chart.getContinentData();
+        const continentNames = {
+            'Asia': 'Asia',
+            'Europe': 'Europe',
+            'Africa': 'Africa',
+            'North America': 'North America',
+            'South America': 'South America',
+            'Oceania': 'Oceania'
+        };
+        
+        // 大洲展开状态
+        const expandedContinents = new Set(['Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania']);
+        
+        // 渲染国家列表（按大洲分组）
+        function renderCountryList(filterText = '') {
+            listDiv.innerHTML = '';
+            
+            const hasFilter = filterText.trim().length > 0;
+            const filterLower = filterText.toLowerCase();
+            
+            // 如果有关键词，只显示匹配的国家（不分组）
+            if (hasFilter) {
+                const allCountries = chart.getAllCountries();
+                const filtered = allCountries.filter(country => 
+                    country.toLowerCase().includes(filterLower)
+                );
+                
+                if (filtered.length === 0) {
+                    listDiv.innerHTML = '<div style="padding: 15px; color: #999; text-align: center;">No matching countries found</div>';
+                    return;
+                }
+                
+                filtered.forEach(country => {
+                    const item = createCountryItem(country, selectedDiv);
+                    listDiv.appendChild(item);
+                });
+                return;
+            }
+            
+            // 无关键词时，按大洲分组显示
+            const continentOrder = ['Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania'];
+            
+            continentOrder.forEach(continent => {
+                const countries = continentData[continent] || [];
+                if (countries.length === 0) return;
+                
+                const isExpanded = expandedContinents.has(continent);
+                const continentName = continentNames[continent] || continent;
+                
+                // 创建大洲标题
+                const continentHeader = document.createElement('div');
+                continentHeader.style.cssText = 'padding: 10px 12px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; cursor: pointer; font-weight: 600; color: #2c3e50; display: flex; align-items: center; justify-content: space-between; user-select: none;';
+                continentHeader.innerHTML = `
+                    <span>${continentName} (${countries.length})</span>
+                    <span style="font-size: 12px; color: #666;">${isExpanded ? '▼' : '▶'}</span>
+                `;
+                
+                continentHeader.addEventListener('click', function() {
+                    if (expandedContinents.has(continent)) {
+                        expandedContinents.delete(continent);
+                    } else {
+                        expandedContinents.add(continent);
+                    }
+                    renderCountryList(filterText);
+                });
+                
+                listDiv.appendChild(continentHeader);
+                
+                // 创建国家列表容器
+                if (isExpanded) {
+                    const countryContainer = document.createElement('div');
+                    countryContainer.className = 'continent-countries';
+                    
+                    countries.forEach(country => {
+                        const item = createCountryItem(country, selectedDiv);
+                        countryContainer.appendChild(item);
+                    });
+                    
+                    listDiv.appendChild(countryContainer);
+                }
+            });
+        }
+        
+        // 创建国家项
+        function createCountryItem(country, selectedDiv) {
+            const item = document.createElement('div');
+            item.style.cssText = 'padding: 8px 12px 8px 24px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; display: flex; align-items: center;';
+            
+            const isSelected = compareSelectedCountries.includes(country);
+            
+            // 添加复选框
+            const checkbox = document.createElement('span');
+            checkbox.style.cssText = `width: 16px; height: 16px; border: 2px solid ${isSelected ? '#667eea' : '#ddd'}; border-radius: 3px; margin-right: 10px; display: inline-flex; align-items: center; justify-content: center; background: ${isSelected ? '#667eea' : 'white'}; flex-shrink: 0;`;
+            if (isSelected) {
+                checkbox.innerHTML = '✓';
+                checkbox.style.color = 'white';
+                checkbox.style.fontSize = '12px';
+            }
+            
+            const countryName = document.createElement('span');
+            countryName.textContent = country;
+            countryName.style.flex = '1';
+            
+            item.appendChild(checkbox);
+            item.appendChild(countryName);
+            
+            if (isSelected) {
+                item.style.background = '#e3f2fd';
+                item.style.fontWeight = '500';
+            }
+            
+            item.addEventListener('mouseenter', function() {
+                if (!isSelected) {
+                    this.style.background = '#f5f5f5';
+                }
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                if (!isSelected) {
+                    this.style.background = '';
+                }
+            });
+            
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const index = compareSelectedCountries.indexOf(country);
+                if (index > -1) {
+                    // 取消选择
+                    compareSelectedCountries.splice(index, 1);
+                } else {
+                    // 添加选择
+                    compareSelectedCountries.push(country);
+                }
+                // 重新渲染以更新状态
+                renderCountryList(searchInput.value);
+                // 使用全局函数更新显示
+                window.updateSelectedCountriesDisplay(selectedDiv);
+            });
+            
+            return item;
+        }
+        
+        // 注意：这里使用全局的 updateSelectedCountriesDisplay 函数，不要定义局部函数
+        
+        // 搜索输入事件
+        searchInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            renderCountryList(value);
+            listDiv.style.display = 'block';
+        });
+        
+        // 点击搜索框显示列表
+        searchInput.addEventListener('focus', function() {
+            renderCountryList(this.value.trim());
+            listDiv.style.display = 'block';
+        });
+        
+        // 点击外部关闭列表
+        let clickOutsideHandler = function(e) {
+            if (!searchInput.contains(e.target) && !listDiv.contains(e.target)) {
+                listDiv.style.display = 'none';
+            }
+        };
+        document.addEventListener('click', clickOutsideHandler);
+        
+        // 初始渲染
+        renderCountryList('');
+        // 使用全局函数更新显示
+        window.updateSelectedCountriesDisplay(selectedDiv);
+        
+        // 保存引用以便后续更新
+        searchInput._renderCountryList = renderCountryList;
+    }
+    
+    // 移除选中的国家
+    function removeCompareCountry(country) {
+        const index = compareSelectedCountries.indexOf(country);
+        if (index > -1) {
+            compareSelectedCountries.splice(index, 1);
+            // 重新渲染列表和显示
+            if (compareLineChart) {
+                const countrySearch = document.getElementById('compare-country-search');
+                const countryList = document.getElementById('compare-country-list');
+                const selectedDiv = document.getElementById('compare-selected-countries');
+                // 如果已经有渲染函数，直接调用
+                if (countrySearch._renderCountryList) {
+                    countrySearch._renderCountryList(countrySearch.value.trim());
+                } else {
+                    initCompareCountrySelector(compareLineChart, countrySearch, countryList, selectedDiv);
+                }
+                // 使用全局函数更新显示
+                window.updateSelectedCountriesDisplay(selectedDiv);
+            }
+        }
+    }
+    
+    
+    // 导出到全局
+    window.removeCompareCountry = removeCompareCountry;
+    
+    /**
+     * 导出图表
+     * @param {string} chartType - 图表类型标识
+     * @param {string} format - 导出格式: 'png' 或 'html'
+     */
+    function exportChart(chartType, format = 'png') {
+        try {
+            let chartInstance = null;
+            let chartName = '';
+            let isImage = false;
+            
+            // 根据图表类型获取对应的图表实例
+            switch(chartType) {
+                case 'dynamic-bar-chart':
+                    chartInstance = dynamicBarChart?.myChart;
+                    chartName = selectedName || '动态排序柱状图';
+                    break;
+                case 'tier-bar-chart':
+                    chartInstance = tierBarChart?.myChart;
+                    chartName = selectedName ? `${selectedName} - Tiered Bar Chart` : 'Tiered Bar Chart';
+                    break;
+                case 'rank-flow-chart':
+                    // 排名变化图是图片，不是ECharts实例，只支持PNG
+                    isImage = true;
+                    chartName = selectedName ? `${selectedName} - Ranking Flow Chart` : 'Ranking Flow Chart';
+                    if (format !== 'png') {
+                        alert('Ranking Flow Chart only supports PNG export');
+                        return;
+                    }
+                    break;
+                case 'line-chart':
+                    chartInstance = lineChart?.myChart;
+                    chartName = selectedName ? `${selectedName} - Line Chart` : 'Line Chart';
+                    break;
+                case 'continent-bar-chart':
+                    chartInstance = continentBarChart?.myChart;
+                    chartName = selectedName ? `${selectedName} - Continental Bar Chart` : 'Continental Bar Chart';
+                    break;
+                case 'compare-line-chart':
+                    chartInstance = compareLineChart?.myChart;
+                    chartName = selectedName ? `${selectedName} - Comparative Line Chart` : 'Comparative Line Chart';
+                    break;
+                default:
+                    alert('Unknown chart type');
+                    return;
+            }
+            
+            if (isImage) {
+                // 处理排名变化图（图片）- 只支持PNG
+                const chartContainer = document.getElementById('rank-flow-chart');
+                if (!chartContainer) {
+                    alert('Chart container does not exist');
+                    return;
+                }
+                
+                const img = chartContainer.querySelector('img');
+                if (!img || !img.src) {
+                    alert('Chart not loaded yet, please wait');
+                    return;
+                }
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.href = img.src;
+                link.download = `${chartName}_${new Date().getTime()}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                // 处理ECharts图表
+                if (!chartInstance) {
+                    alert('Chart not loaded yet, please wait');
+                    return;
+                }
+                
+                if (format === 'png') {
+                    // 导出PNG
+                    const url = chartInstance.getDataURL({
+                        type: 'png',
+                        pixelRatio: 2, // 提高导出图片的清晰度
+                        backgroundColor: '#fff'
+                    });
+                    
+                    // 创建下载链接
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${chartName}_${new Date().getTime()}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else if (format === 'html') {
+                    // 导出HTML（交互式图表）
+                    const option = chartInstance.getOption();
+                    
+                    if (!option) {
+                        alert('Unable to get chart configuration, please ensure the chart is loaded');
+                        return;
+                    }
+                    
+                    // 直接序列化option，跳过函数（函数会在HTML中重新设置）
+                    let optionJson;
+                    try {
+                        optionJson = JSON.stringify(option, function(key, value) {
+                            // 跳过函数，稍后在HTML中统一设置formatter
+                            if (typeof value === 'function') {
+                                return undefined;
+                            }
+                            // 确保所有属性都被保留
+                            return value;
+                        }, 2);
+                        
+                        if (!optionJson || optionJson === '{}' || optionJson === 'null') {
+                            throw new Error('Chart configuration serialization failed');
+                        }
+                    } catch (error) {
+                        console.error('Failed to serialize chart configuration:', error, option);
+                        alert('Export failed: Unable to serialize chart configuration. Error: ' + error.message);
+                        return;
+                    }
+                    
+                    const escapedChartName = chartName.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    
+                    // 创建HTML内容（使用数组join避免字符串解析问题）
+                    const htmlParts = [
+                        '<!DOCTYPE html>',
+                        '<html lang="zh-CN">',
+                        '<head>',
+                        '    <meta charset="UTF-8">',
+                        '    <meta name="viewport" content="width=device-width, initial-scale=1.0">',
+                        '    <title>' + escapedChartName + '</title>',
+                        '    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>',
+                        '    <style>',
+                        '        * { margin: 0; padding: 0; box-sizing: border-box; }',
+                        '        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }',
+                        '        .chart-container { width: 100%; max-width: 1400px; height: 800px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 20px; }',
+                        '        h1 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }',
+                        '    </style>',
+                        '</head>',
+                        '<body>',
+                        '    <div class="chart-container">',
+                        '        <h1>' + escapedChartName + '</h1>',
+                        '        <div id="chart" style="width: 100%; height: calc(100% - 60px);"></div>',
+                        '    </div>',
+                        '    <script>',
+                        '        const chartDom = document.getElementById("chart");',
+                        '        if (!chartDom) {',
+                        '            console.error("找不到图表容器");',
+                        '        } else {',
+                        '            const myChart = echarts.init(chartDom);',
+                        '            if (!myChart) {',
+                        '                console.error("ECharts initialization failed");',
+                        '                chartDom.innerHTML = \'<div style="padding: 20px; text-align: center; color: #f44336;">ECharts initialization failed, please check if ECharts library is loaded</div>\';',
+                        '            } else {',
+                        '                const option = ' + optionJson + ';',
+                        '                ',
+                        '        // 统一设置所有formatter为3位小数',
+                        '        function setFormatters(opt) {',
+                        '            if (!opt) return;',
+                        '            ',
+                        '            // 处理tooltip formatter（tooltip可能是对象或数组）',
+                        '            function setTooltipFormatter(tooltip) {',
+                        '                if (!tooltip) return;',
+                        '                if (Array.isArray(tooltip)) {',
+                        '                    tooltip.forEach(function(t) {',
+                        '                        if (t) t.formatter = createTooltipFormatter();',
+                        '                    });',
+                        '                } else {',
+                        '                    tooltip.formatter = createTooltipFormatter();',
+                        '                }',
+                        '            }',
+                        '            ',
+                        '            function createTooltipFormatter() {',
+                        '                return function(params) {',
+                        '                    if (Array.isArray(params)) {',
+                        '                        let result = params[0].axisValue + "<br/>";',
+                        '                        params.forEach(function(item) {',
+                        '                            const value = item.value;',
+                        '                            const formattedValue = value !== null && value !== undefined && !isNaN(value) ? value.toFixed(3) : "N/A";',
+                        '                            result += \'<span style="display:inline-block;margin-right:5px;border-radius:50%;width:10px;height:10px;background-color:\' + item.color + \';"></span>\' + item.seriesName + \': \' + formattedValue + \'<br/>\';',
+                        '                        });',
+                        '                        return result;',
+                        '                    } else {',
+                        '                        const param = params;',
+                        '                        const value = param.value;',
+                        '                        const formattedValue = value !== null && value !== undefined && !isNaN(value) ? (typeof value === "number" ? value.toFixed(3) : (Array.isArray(value) ? value[0].toFixed(3) : value)) : "N/A";',
+                        '                        return param.name + "<br/>" + (param.seriesName || "Value") + ": " + formattedValue;',
+                        '                    }',
+                        '                };',
+                        '            }',
+                        '            ',
+                        '            if (opt.tooltip) setTooltipFormatter(opt.tooltip);',
+                        '            ',
+                        '            // 处理xAxis和yAxis的axisLabel formatter',
+                        '            function processAxis(axis) {',
+                        '                if (Array.isArray(axis)) {',
+                        '                    axis.forEach(processAxis);',
+                        '                } else if (axis && axis.axisLabel) {',
+                        '                    // 只对数值类型的坐标轴设置formatter（如yAxis），字符串类型的坐标轴（如xAxis的年份）不处理',
+                        '                    if (axis.type === "value") {',
+                        '                        axis.axisLabel.formatter = function(value) {',
+                        '                            // 确保value是数字类型',
+                        '                            if (typeof value === "number" && !isNaN(value)) {',
+                        '                                return value.toFixed(3);',
+                        '                            }',
+                        '                            // 如果是字符串但可以转换为数字，也处理',
+                        '                            const numValue = parseFloat(value);',
+                        '                            if (!isNaN(numValue)) {',
+                        '                                return numValue.toFixed(3);',
+                        '                            }',
+                        '                            // 否则返回原值（如年份字符串）',
+                        '                            return value;',
+                        '                        };',
+                        '                    }',
+                        '                }',
+                        '            }',
+                        '            ',
+                        '            if (opt.xAxis) processAxis(opt.xAxis);',
+                        '            if (opt.yAxis) processAxis(opt.yAxis);',
+                        '            ',
+                        '            // 处理series的label formatter',
+                        '            if (opt.series) {',
+                        '                opt.series.forEach(function(series) {',
+                        '                    if (series.label && series.label.show) {',
+                        '                        series.label.formatter = function(params) {',
+                        '                            const value = params.value;',
+                        '                            if (value !== null && value !== undefined && !isNaN(value)) {',
+                        '                                return (typeof value === "number" ? value.toFixed(3) : (Array.isArray(value) ? value[0].toFixed(3) : value));',
+                        '                            }',
+                        '                            return value;',
+                        '                        };',
+                        '                    }',
+                        '                });',
+                        '            }',
+                        '        }',
+                        '        ',
+                        '                try {',
+                        '                    if (!option || !option.series || option.series.length === 0) {',
+                        '                        throw new Error("图表配置无效：缺少series数据");',
+                        '                    }',
+                        '                    setFormatters(option);',
+                        '                    myChart.setOption(option, true);',
+                        '                    window.addEventListener("resize", function() { myChart.resize(); });',
+                        '                    console.log("Chart initialized successfully");',
+                        '                } catch (error) {',
+                        '                    console.error("Chart initialization failed:", error);',
+                        '                    chartDom.innerHTML = \'<div style="padding: 20px; text-align: center; color: #f44336;">Chart loading failed: \' + error.message + \'<br/>Please check the browser console for details</div>\';',
+                        '                }',
+                        '            }',
+                        '        }',
+                        '    <\/script>',
+                        '</body>',
+                        '</html>'
+                    ];
+                    const htmlContent = htmlParts.join('\n');
+                    
+                    // 创建Blob并下载
+                    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = chartName.replace(/[<>:"/\\|?*]/g, '_') + '_' + new Date().getTime() + '.html';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to export chart:', error);
+            alert('Export failed: ' + error.message);
+        }
+    }
+    
+    // 导出到全局
+    window.exportChart = exportChart;
+    </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" href="/favicon.ico">
+    <title>OSRI指标计算系统</title>
+    <script>
+      // 在页面加载前就拦截 ResizeObserver 错误
+      (function() {
+        if (typeof window !== 'undefined') {
+          // 1. 拦截 window.onerror
+          const originalErrorHandler = window.onerror;
+          window.onerror = function(message, source, lineno, colno, error) {
+            const msg = (message || '').toString();
+            if (/ResizeObserver/i.test(msg)) {
+              return true; // 阻止默认错误处理
+            }
+            if (error && error.message && /ResizeObserver/i.test(error.message)) {
+              return true;
+            }
+            if (originalErrorHandler) {
+              return originalErrorHandler.call(this, message, source, lineno, colno, error);
+            }
+            return false;
+          };
+
+          // 2. 拦截全局错误事件（捕获阶段）
+          window.addEventListener('error', function(event) {
+            const errorMessage = (event.message || (event.error && event.error.message) || '').toString();
+            if (/ResizeObserver/i.test(errorMessage)) {
+              event.preventDefault();
+              event.stopPropagation();
+              event.stopImmediatePropagation();
+              return false;
+            }
+          }, true);
+
+          // 3. 拦截 unhandledrejection
+          window.addEventListener('unhandledrejection', function(event) {
+            if (event.reason) {
+              const reasonStr = (event.reason.message || event.reason.toString() || '').toString();
+              if (/ResizeObserver/i.test(reasonStr)) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+              }
+            }
+          }, true);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <strong>We're sorry but this application doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+

@@ -1,0 +1,10 @@
+{
+    "useConfigFiles": false,
+    "plugins": {
+        "@vue/cli-plugin-vue": {
+            "version": "^4.5.0"
+        }
+    },
+    "vueVersion": "3",
+    "packageManager": "npm"
+}

@@ -1,0 +1,19 @@
+services:
+  osri:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: osri
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6001:6001"
+    environment:
+      TZ: Asia/Shanghai
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./runtime_data/jsondata:/app/system/jsondata
+      - ./runtime_data/HDI.json:/app/system/HDI.json:ro
+      - ./runtime_data/output:/app/system/output
+      - ./runtime_data/jsondata_aggregation:/app/system/jsondata_aggregation
+      - ./runtime_data/output_aggregation:/app/system/output_aggregation
+      - ./runtime_data/runtime:/app/system/.runtime

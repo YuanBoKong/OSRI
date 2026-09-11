@@ -1,0 +1,47 @@
+FROM node:20-bookworm-slim AS frontend-builder
+
+WORKDIR /src/system/frontend
+COPY system/frontend/package*.json ./
+RUN npm ci
+COPY system/frontend/ ./
+RUN npm run build
+
+FROM python:3.11-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app/system:/app/vis \
+    PORT=6001
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl fontconfig fonts-noto-cjk \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY system/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+COPY system /app/system
+COPY vis /app/vis
+COPY --from=frontend-builder /src/system/frontend/dist /app/system/frontend/dist
+COPY docker/entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh \
+    && mkdir -p \
+      /app/system/jsondata \
+      /app/system/output \
+      /app/system/jsondata_aggregation \
+      /app/system/output_aggregation \
+      /app/system/.runtime \
+      /app/vis/data \
+      /app/vis/data_aggregation
+
+WORKDIR /app/system
+
+EXPOSE 6001
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:6001/api/jsondata/files >/dev/null || exit 1
+
+CMD ["/entrypoint.sh"]
