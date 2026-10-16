@@ -25,7 +25,10 @@ npm ci
 npm run dev
 ```
 
-访问 http://127.0.0.1:6002/OSRI/；参考：https://insightlens.cn/OSRI/；生产部署方式见 [部署说明](DEPLOYMENT.md)，各模块功能见 [功能说明](FUNCTIONALITY.md)。
+访问 http://127.0.0.1:6002/OSRI/；
+参考：https://insightlens.cn/OSRI/；
+生产部署方式见 [部署说明](DEPLOYMENT.md)，
+各模块功能见 [功能说明](FUNCTIONALITY.md)。
 
 ## 代码与数据
 
