@@ -97,7 +97,7 @@ if __name__ == "__main__":
     import sys
     
     # 测试文件路径
-    test_file = "/Users/xiaokong/temp_work/2026/pdq/excel/platform_v2.xlsx"
+    test_file = str(__import__("pathlib").Path(__file__).resolve().parent / "excel/platform_v2.xlsx")
     
     # 可以从命令行参数获取输入文件
     if len(sys.argv) > 1:

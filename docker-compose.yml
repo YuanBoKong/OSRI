@@ -16,4 +16,6 @@ services:
       - ./runtime_data/output:/app/system/output
       - ./runtime_data/jsondata_aggregation:/app/system/jsondata_aggregation
       - ./runtime_data/output_aggregation:/app/system/output_aggregation
+      - ./runtime_data/jsondata_global_plus:/app/system/jsondata_global_plus
+      - ./runtime_data/output_global_plus:/app/system/output_global_plus
       - ./runtime_data/runtime:/app/system/.runtime

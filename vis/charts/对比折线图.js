@@ -9,7 +9,7 @@
  *     countries: ['China', 'United States'],
  *     startYear: '2014',
  *     endYear: '2024',
- *     name: '开放科学准备度'
+ *     name: '开放科学成熟度'
  * });
  */
 

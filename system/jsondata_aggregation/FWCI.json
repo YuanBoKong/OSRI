@@ -1,0 +1,123 @@
+{
+  "2014": {
+    "STLCs": 1.07,
+    "China": 0.83,
+    "EU27": 1.24,
+    "Germany": 1.46,
+    "India": 0.77,
+    "Japan": 0.97,
+    "Russia": 0.78,
+    "United Kingdom": 1.59,
+    "United States": 1.48
+  },
+  "2015": {
+    "STLCs": 1.13,
+    "China": 0.94,
+    "EU27": 1.21,
+    "Germany": 1.43,
+    "India": 0.77,
+    "Japan": 0.94,
+    "Russia": 0.75,
+    "United Kingdom": 1.59,
+    "United States": 1.45
+  },
+  "2016": {
+    "STLCs": 1.07,
+    "China": 0.97,
+    "EU27": 1.19,
+    "Germany": 1.4,
+    "India": 0.81,
+    "Japan": 0.96,
+    "Russia": 0.74,
+    "United Kingdom": 1.58,
+    "United States": 1.44
+  },
+  "2017": {
+    "STLCs": 1.11,
+    "China": 1.02,
+    "EU27": 1.17,
+    "Germany": 1.35,
+    "India": 0.85,
+    "Japan": 0.95,
+    "Russia": 0.76,
+    "United Kingdom": 1.55,
+    "United States": 1.41
+  },
+  "2018": {
+    "STLCs": 1.11,
+    "China": 1.06,
+    "EU27": 1.16,
+    "Germany": 1.33,
+    "India": 0.87,
+    "Japan": 0.93,
+    "Russia": 0.73,
+    "United Kingdom": 1.52,
+    "United States": 1.4
+  },
+  "2019": {
+    "STLCs": 1.08,
+    "China": 1.09,
+    "EU27": 1.16,
+    "Germany": 1.33,
+    "India": 0.85,
+    "Japan": 0.93,
+    "Russia": 0.73,
+    "United Kingdom": 1.56,
+    "United States": 1.38
+  },
+  "2020": {
+    "STLCs": 1.01,
+    "China": 1.15,
+    "EU27": 1.16,
+    "Germany": 1.32,
+    "India": 0.96,
+    "Japan": 0.92,
+    "Russia": 0.77,
+    "United Kingdom": 1.56,
+    "United States": 1.33
+  },
+  "2021": {
+    "STLCs": 1.11,
+    "China": 1.03,
+    "EU27": 1.2,
+    "Germany": 1.35,
+    "India": 1.03,
+    "Japan": 0.9,
+    "Russia": 0.71,
+    "United Kingdom": 1.61,
+    "United States": 1.33
+  },
+  "2022": {
+    "STLCs": 1.14,
+    "China": 1.12,
+    "EU27": 1.15,
+    "Germany": 1.32,
+    "India": 1.04,
+    "Japan": 0.94,
+    "Russia": 0.65,
+    "United Kingdom": 1.54,
+    "United States": 1.3
+  },
+  "2023": {
+    "STLCs": 1.13,
+    "China": 1.11,
+    "EU27": 1.15,
+    "Germany": 1.36,
+    "India": 1.11,
+    "Japan": 0.97,
+    "Russia": 0.6,
+    "United Kingdom": 1.52,
+    "United States": 1.31
+  },
+  "2024": {
+    "STLCs": 1.14,
+    "China": 1.12,
+    "EU27": 1.15,
+    "Germany": 1.34,
+    "India": 1.03,
+    "Japan": 0.94,
+    "Russia": 0.63,
+    "United Kingdom": 1.55,
+    "United States": 1.34
+  }
+}

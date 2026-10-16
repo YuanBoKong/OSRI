@@ -7,12 +7,12 @@
  *     containerId: 'chart-container',
  *     filename: 'R.json',
  *     year: '2024',
- *     name: '开放科学准备度'
+ *     name: '开放科学成熟度'
  * });
  */
 
 // 大洲列表（按展示顺序：欧洲、亚洲、北美、南美、非洲、大洋洲）
-const CONTINENTS = ['Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania'];
+const DEFAULT_CONTINENTS = ['Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania'];
 
 // 大洲中文名称映射
 const CONTINENT_NAMES = {
@@ -21,7 +21,8 @@ const CONTINENT_NAMES = {
     'Africa': 'Africa',
     'North America': 'North America',
     'South America': 'South America',
-    'Oceania': 'Oceania'
+    'Oceania': 'Oceania',
+    'Groups': 'Groups'
 };
 
 /**
@@ -36,10 +37,44 @@ class ContinentBarChart {
         
         this.myChart = null;
         this.currentContinentIndex = 0; // 当前显示的大洲索引
+        this.continents = [...DEFAULT_CONTINENTS];
         this.continentData = {}; // 缓存各大洲的数据
         this.currentData = null;
         
         this.init();
+    }
+
+    /**
+     * 根据当前数据源加载可用分组。全球Plus会额外包含Groups。
+     */
+    async loadAvailableContinents() {
+        const apiBase = (typeof window !== 'undefined' && window.API_BASE) || '/api';
+        const getApiUrl = (typeof window !== 'undefined' && window.getApiUrl) || ((endpoint, params) => {
+            const url = new URL(endpoint.startsWith('http') ? endpoint : `${apiBase}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`, window.location.origin);
+            const dataSource = (typeof window !== 'undefined' && window.currentDataSource) ? window.currentDataSource() : 'global';
+            url.searchParams.set('data_source', dataSource);
+            Object.keys(params || {}).forEach(key => url.searchParams.set(key, params[key]));
+            return url.toString();
+        });
+
+        try {
+            const response = await fetch(getApiUrl('/continent'));
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const continentMapping = await response.json();
+            const extraContinents = Object.keys(continentMapping).filter(continent => !DEFAULT_CONTINENTS.includes(continent));
+            this.continents = [
+                ...DEFAULT_CONTINENTS.filter(continent => Array.isArray(continentMapping[continent])),
+                ...extraContinents
+            ];
+            if (this.currentContinentIndex >= this.continents.length) {
+                this.currentContinentIndex = 0;
+            }
+        } catch (error) {
+            console.warn('加载可用大洲分组失败，使用默认分组:', error);
+            this.continents = [...DEFAULT_CONTINENTS];
+        }
     }
     
     /**
@@ -125,15 +160,16 @@ class ContinentBarChart {
         }
         
         try {
+            await this.loadAvailableContinents();
             // 并行加载所有大洲的数据
-            const promises = CONTINENTS.map(continent => 
+            const promises = this.continents.map(continent =>
                 this.getContinentData(this.filename, continent, this.year)
             );
             
             const results = await Promise.all(promises);
             
             // 存储到缓存
-            CONTINENTS.forEach((continent, index) => {
+            this.continents.forEach((continent, index) => {
                 this.continentData[continent] = results[index];
             });
             
@@ -182,7 +218,7 @@ class ContinentBarChart {
             return;
         }
         
-        const currentContinent = CONTINENTS[this.currentContinentIndex];
+        const currentContinent = this.continents[this.currentContinentIndex];
         const continentName = CONTINENT_NAMES[currentContinent] || currentContinent;
         const data = this.continentData[currentContinent] || [];
         
@@ -318,7 +354,7 @@ class ContinentBarChart {
      * 切换到下一个大洲
      */
     nextContinent() {
-        if (this.currentContinentIndex < CONTINENTS.length - 1) {
+        if (this.currentContinentIndex < this.continents.length - 1) {
             this.currentContinentIndex++;
             this.updateChart();
             return true;
@@ -342,7 +378,7 @@ class ContinentBarChart {
      * 切换到指定大洲
      */
     goToContinent(index) {
-        if (index >= 0 && index < CONTINENTS.length) {
+        if (index >= 0 && index < this.continents.length) {
             this.currentContinentIndex = index;
             this.updateChart();
             return true;
@@ -356,9 +392,9 @@ class ContinentBarChart {
     getCurrentContinent() {
         return {
             index: this.currentContinentIndex,
-            name: CONTINENTS[this.currentContinentIndex],
-            chineseName: CONTINENT_NAMES[CONTINENTS[this.currentContinentIndex]],
-            total: CONTINENTS.length
+            name: this.continents[this.currentContinentIndex],
+            chineseName: CONTINENT_NAMES[this.continents[this.currentContinentIndex]] || this.continents[this.currentContinentIndex],
+            total: this.continents.length
         };
     }
     
@@ -399,7 +435,6 @@ class ContinentBarChart {
 // 导出类
 if (typeof window !== 'undefined') {
     window.ContinentBarChart = ContinentBarChart;
-    window.CONTINENTS = CONTINENTS;
+    window.CONTINENTS = DEFAULT_CONTINENTS;
     window.CONTINENT_NAMES = CONTINENT_NAMES;
 }
-

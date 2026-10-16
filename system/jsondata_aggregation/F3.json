@@ -1,0 +1,123 @@
+{
+  "2014": {
+    "STLCs": 1,
+    "China": 0.453324970899675,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 0.490100733505413,
+    "Japan": 1.2,
+    "Russia": 1.09600224848078,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  },
+  "2015": {
+    "STLCs": 1,
+    "China": 0.631375295364806,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 0.968828334048145,
+    "Japan": 1.2,
+    "Russia": 0.0683388276855365,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  },
+  "2016": {
+    "STLCs": 1,
+    "China": 0.755453461117703,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 1.05556928608275,
+    "Japan": 1.2,
+    "Russia": 0.0786734735299028,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  },
+  "2017": {
+    "STLCs": 1,
+    "China": 0.496968196995857,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 0.851243840644405,
+    "Japan": 0.886173421290749,
+    "Russia": 0.159083694136512,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  },
+  "2018": {
+    "STLCs": 1,
+    "China": 0.538221909469885,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 0.951986960897982,
+    "Japan": 1.2,
+    "Russia": 0.281178452875478,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  },
+  "2019": {
+    "STLCs": 1,
+    "China": 0.404561102616762,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 1.17645353371734,
+    "Japan": 1.2,
+    "Russia": 0.296461002742317,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  },
+  "2020": {
+    "STLCs": 1,
+    "China": 0.472832956165065,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 1.02792061552627,
+    "Japan": 1.2,
+    "Russia": 0.321189379176183,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  },
+  "2021": {
+    "STLCs": 1,
+    "China": 0.436105888068531,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 0.225700871286816,
+    "Japan": 1.2,
+    "Russia": 1.2,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  },
+  "2022": {
+    "STLCs": 1,
+    "China": 0.41276154815273,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 1.01775650534483,
+    "Japan": 1.2,
+    "Russia": 1.2,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  },
+  "2023": {
+    "STLCs": 1,
+    "China": 0.336246431522173,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 1.2,
+    "Japan": 1.2,
+    "Russia": 1.2,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  },
+  "2024": {
+    "STLCs": 1,
+    "China": 0.50974796043821,
+    "EU27": 1,
+    "Germany": 1.2,
+    "India": 0.63622900413311,
+    "Japan": 1.2,
+    "Russia": 1.2,
+    "United Kingdom": 1.2,
+    "United States": 1.2
+  }
+}

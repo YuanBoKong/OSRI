@@ -1,0 +1,68 @@
+{
+  "2014": {
+    "world_oa_total": 338081,
+    "world_total": 2056703,
+    "world_retraction": 1192,
+    "word_scientist": 3215
+  },
+  "2015": {
+    "world_oa_total": 394988,
+    "world_total": 2123630,
+    "world_retraction": 1751,
+    "word_scientist": 3125
+  },
+  "2016": {
+    "world_oa_total": 447077,
+    "world_total": 2177657,
+    "world_retraction": 1924,
+    "word_scientist": 3266
+  },
+  "2017": {
+    "world_oa_total": 512523,
+    "world_total": 2224073,
+    "world_retraction": 1893,
+    "word_scientist": 3538
+  },
+  "2018": {
+    "world_oa_total": 600857,
+    "world_total": 2340673,
+    "world_retraction": 2815,
+    "word_scientist": 6078
+  },
+  "2019": {
+    "world_oa_total": 767969,
+    "world_total": 2574832,
+    "world_retraction": 3229,
+    "word_scientist": 6216
+  },
+  "2020": {
+    "world_oa_total": 974048,
+    "world_total": 2831045,
+    "world_retraction": 3634,
+    "word_scientist": 6167
+  },
+  "2021": {
+    "world_oa_total": 1221486,
+    "world_total": 3077503,
+    "world_retraction": 5112,
+    "word_scientist": 6602
+  },
+  "2022": {
+    "world_oa_total": 1389921,
+    "world_total": 3172448,
+    "world_retraction": 6413,
+    "word_scientist": 7225
+  },
+  "2023": {
+    "world_oa_total": 1404192,
+    "world_total": 3114017,
+    "world_retraction": 13417,
+    "word_scientist": 7125
+  },
+  "2024": {
+    "world_oa_total": 1510702,
+    "world_total": 3292732,
+    "world_retraction": 6142,
+    "word_scientist": 6886
+  }
+}

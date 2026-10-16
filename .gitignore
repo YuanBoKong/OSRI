@@ -7,30 +7,18 @@ __pycache__/
 system/frontend/node_modules/
 system/frontend/dist/
 
-# Runtime data and outputs
+# Runtime-only state
 runtime_data/
-system/HDI.json
-system/jsondata/*
-!system/jsondata/.gitkeep
-system/output/*
-!system/output/.gitkeep
-system/jsondata_aggregation/*
-!system/jsondata_aggregation/.gitkeep
-system/output_aggregation/*
-!system/output_aggregation/.gitkeep
 system/.runtime/*
 !system/.runtime/.gitkeep
-vis/data/*
-!vis/data/.gitkeep
-!vis/data/name.json
-!vis/data/continent.json
-vis/data_aggregation/*
-!vis/data_aggregation/.gitkeep
-!vis/data_aggregation/name.json
-!vis/data_aggregation/continent.json
 
 # Local files
 .DS_Store
 *.log
 *.lock
 *.bak
+
+# Local secrets
+.env
+.env.*
+!.env.example

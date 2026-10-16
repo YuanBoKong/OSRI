@@ -95,7 +95,20 @@
                   :label="filename"
                 >
                   <template #label>
+                    <span v-if="filename === 'R_zero_fill.json'" class="file-tab-label">
+                      <span>{{ filename }}</span>
+                      <el-tooltip
+                        content="缺失补零口径：只要 R_oa_bar、R_od_bar、R_op_bar 三项里至少一个有值，就计算；缺失维度按 0。"
+                        placement="top"
+                        popper-class="zero-fill-tooltip"
+                      >
+                        <el-icon class="file-help-icon" @click.stop>
+                          <QuestionFilled />
+                        </el-icon>
+                      </el-tooltip>
+                    </span>
                     <el-tooltip 
+                      v-else
                       :content="getFileDescription(filename) || filename" 
                       placement="top"
                       :disabled="!getFileDescription(filename)"
@@ -180,78 +193,60 @@
               </div>
 
               <div class="table-container">
-                <div class="split-table-wrapper">
-                  <!-- 左侧固定表格：只显示年份列 -->
-                  <div class="fixed-table-left" ref="fixedTableLeftRef">
-                    <el-table
-                      ref="fixedTableRef"
-                      :data="tableData"
-                      height="600"
-                      v-loading="loading"
-                      class="modern-table fixed-table"
-                      :row-class-name="tableRowClassName"
-                    >
-                      <el-table-column prop="year" label="年份" width="120" align="center">
-                        <template #default="scope">
-                          <div class="year-cell">
-                            <el-input
-                              v-if="editingCell === `${scope.row.year}_year`"
-                              v-model="scope.row.year"
-                              @blur="saveCellEdit(scope.row, 'year')"
-                              @keyup.enter="saveCellEdit(scope.row, 'year')"
-                              size="large"
-                            />
-                            <div v-else @click="startCellEdit(`${scope.row.year}_year`)" class="editable-cell">
-                              {{ scope.row.year }}
-                            </div>
-                          </div>
-                        </template>
-                      </el-table-column>
-                    </el-table>
-                  </div>
-                  
-                  <!-- 右侧滚动表格：显示其他列 -->
-                  <div class="scroll-table-right" ref="scrollTableRightRef">
-                    <el-table
-                      ref="scrollTableRef"
-                      :data="tableData"
-                      height="600"
-                      v-loading="loading"
-                      class="modern-table scroll-table"
-                      :row-class-name="tableRowClassName"
-                    >
-                      <el-table-column
-                        v-for="country in countries"
-                        :key="country"
-                        :prop="country"
-                        :label="country"
-                        width="160"
-                        align="center"
-                      >
-                        <template #default="scope">
-                          <div class="data-cell">
-                            <el-input-number
-                              v-if="editingCell === `${scope.row.year}_${country}`"
-                              v-model="scope.row[country]"
-                              :precision="10"
-                              :step="0.0001"
-                              @blur="saveCellEdit(scope.row, country)"
-                              @keyup.enter="saveCellEdit(scope.row, country)"
-                              size="small"
-                              :controls="false"
-                            />
-                            <div v-else @click="startCellEdit(`${scope.row.year}_${country}`)" class="editable-cell">
-                              {{ scope.row[country] !== null && scope.row[country] !== undefined 
-                                ? Number(scope.row[country]).toFixed(8) 
-                                : '—' }}
-                            </div>
-                          </div>
-                        </template>
-                      </el-table-column>
-                      
-                    </el-table>
-                  </div>
-                </div>
+                <el-table
+                  ref="fixedTableRef"
+                  :data="tableData"
+                  height="600"
+                  v-loading="loading"
+                  class="modern-table unified-table"
+                  :row-class-name="tableRowClassName"
+                >
+                  <el-table-column prop="year" :label="primaryKeyLabel" width="150" align="center" fixed="left">
+                    <template #default="scope">
+                      <div class="year-cell">
+                        <el-input
+                          v-if="editingCell === `${scope.row.year}_year`"
+                          v-model="scope.row.year"
+                          @blur="saveCellEdit(scope.row, 'year')"
+                          @keyup.enter="saveCellEdit(scope.row, 'year')"
+                          size="large"
+                        />
+                        <div v-else @click="startCellEdit(`${scope.row.year}_year`)" class="editable-cell">
+                          {{ scope.row.year }}
+                        </div>
+                      </div>
+                    </template>
+                  </el-table-column>
+
+                  <el-table-column
+                    v-for="country in countries"
+                    :key="country"
+                    :prop="country"
+                    :label="country"
+                    width="160"
+                    align="center"
+                  >
+                    <template #default="scope">
+                      <div class="data-cell">
+                        <el-input-number
+                          v-if="editingCell === `${scope.row.year}_${country}`"
+                          v-model="scope.row[country]"
+                          :precision="10"
+                          :step="0.0001"
+                          @blur="saveCellEdit(scope.row, country)"
+                          @keyup.enter="saveCellEdit(scope.row, country)"
+                          size="small"
+                          :controls="false"
+                        />
+                        <div v-else @click="startCellEdit(`${scope.row.year}_${country}`)" class="editable-cell">
+                          {{ scope.row[country] !== null && scope.row[country] !== undefined
+                            ? Number(scope.row[country]).toFixed(8)
+                            : '—' }}
+                        </div>
+                      </div>
+                    </template>
+                  </el-table-column>
+                </el-table>
               </div>
             </div>
                   </div>
@@ -339,9 +334,10 @@
 <script>
 import { ref, reactive, onMounted, computed, nextTick, watch, inject } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Document, TrendCharts, DataAnalysis, Collection, InfoFilled, Download, Filter, FolderOpened } from '@element-plus/icons-vue'
+import { Refresh, Document, TrendCharts, DataAnalysis, Collection, InfoFilled, Download, Filter, FolderOpened, QuestionFilled } from '@element-plus/icons-vue'
 import { listOutputFiles, getOutputFile, updateOutputFile, exportOutputToExcel, filterOutputFile } from '../api/output'
 import { getJsonDataFile } from '../api/jsondata'
+import { orderCountriesForVersion } from '../utils/countryOrder'
 
 export default {
   name: 'OutputResults',
@@ -351,8 +347,19 @@ export default {
     // 文件顺序和描述映射
     const fileOrderAndDescription = {
       'R.json': 'OSRI计算结果数据',
-      'R_oa.json': '开放获取准备度',
-      'R_oa_bar.json': '开放获取准备度',
+      'R_zero_fill.json': 'OSRI计算结果数据（缺失补零口径）',
+      'R_stats_by_year.json': 'R按年份统计量',
+      'R_zero_fill_stats_by_year.json': '缺失补零R按年份统计量',
+      'R_oa_bar_stats_by_year.json': 'R_oa_bar按年份统计量',
+      'R_od_bar_stats_by_year.json': 'R_od_bar按年份统计量',
+      'R_op_bar_stats_by_year.json': 'R_op_bar按年份统计量',
+      'R_stats_by_country.json': 'R按国家/地区/组织统计量',
+      'R_zero_fill_stats_by_country.json': '缺失补零R按国家/地区/组织统计量',
+      'R_oa_bar_stats_by_country.json': 'R_oa_bar按国家/地区/组织统计量',
+      'R_od_bar_stats_by_country.json': 'R_od_bar按国家/地区/组织统计量',
+      'R_op_bar_stats_by_country.json': 'R_op_bar按国家/地区/组织统计量',
+      'R_oa.json': '开放获取',
+      'R_oa_bar.json': '开放获取',
       'R_open.json': '开放性',
       'r_open_t.json': 'OA论文的占比',
       'r_open_t1.json': 'OA论文年均占比的最大值',
@@ -363,8 +370,8 @@ export default {
       'P_incl_t1.json': '合著论文数量均值的最大值',
       'r_incl_t.json': '合著论文占比',
       'r_incl_t1.json': '合著论文占比均值的最大值',
-      'R_od.json': '开放获取准备度',
-      'R_od_bar.json': '开放获取准备度',
+      'R_od.json': '开放数据',
+      'R_od_bar.json': '开放数据',
       'A_od_t.json': '可访问数据量',
       'A_od_t1.json': '可访问数据量均值最大值',
       'S_od_t.json': '可共享数据量',
@@ -372,7 +379,7 @@ export default {
       'f1.json': '数据学术质量',
       'f2.json': '数据信息质量',
       'f3.json': '数据完整性（基于撤回率）',
-      'R_op_bar.json': '开放政策准备度',
+      'R_op_bar.json': '开放政策',
       'S_journal_t.json': '收录期刊',
       'S_policy_t.json': 'OS政策',
       'IPRI.json': 'IPRI'
@@ -381,7 +388,7 @@ export default {
     // 一级和二级的层级结构
     const categoryStructure = {
       '开放科学成熟度': {
-        files: ['R.json']
+        files: ['R.json', 'R_zero_fill.json']
       },
       '开放获取': {
         files: [
@@ -421,11 +428,29 @@ export default {
           "S_law_t.json",
           "S_platform_t.json"
         ]
+      },
+      '统计量-按年份': {
+        files: [
+          'R_stats_by_year.json',
+          'R_zero_fill_stats_by_year.json',
+          'R_oa_bar_stats_by_year.json',
+          'R_od_bar_stats_by_year.json',
+          'R_op_bar_stats_by_year.json'
+        ]
+      },
+      '统计量-按国家': {
+        files: [
+          'R_stats_by_country.json',
+          'R_zero_fill_stats_by_country.json',
+          'R_oa_bar_stats_by_country.json',
+          'R_od_bar_stats_by_country.json',
+          'R_op_bar_stats_by_country.json'
+        ]
       }
     }
     
     // 一级分类顺序
-    const categoryOrder = ['开放科学成熟度', '开放获取', '开放数据', '开放政策']
+    const categoryOrder = ['开放科学成熟度', '开放获取', '开放数据', '开放政策', '统计量-按年份', '统计量-按国家']
     
     const fileList = ref([])
     const activeTab = ref('')
@@ -470,6 +495,15 @@ export default {
       }
     })
 
+    const isStatisticsFile = (filename) => filename.includes('_stats_by_')
+    const isCountryStatisticsFile = (filename) => filename.endsWith('_stats_by_country.json')
+
+    const primaryKeyLabel = computed(() => {
+      return isCountryStatisticsFile(currentFilename.value || activeTab.value)
+        ? '国家/地区/组织'
+        : '年份'
+    })
+
     const tableData = computed(() => {
       if (!currentFileData.value || typeof currentFileData.value !== 'object') {
         return []
@@ -479,8 +513,12 @@ export default {
         return []
       }
       
-      const years = Object.keys(currentFileData.value).sort()
-      return years.map(year => {
+      const rowKeys = Object.keys(currentFileData.value)
+      const isCountryStats = isCountryStatisticsFile(currentFilename.value || activeTab.value)
+      const orderedRowKeys = isCountryStats
+        ? orderCountriesForVersion(rowKeys, versionMode.value).slice(0, 10)
+        : rowKeys.sort()
+      return orderedRowKeys.map(year => {
         const row = { year, ...currentFileData.value[year] }
         return row
       })
@@ -493,9 +531,12 @@ export default {
       
       const firstYear = Object.keys(currentFileData.value)[0]
       if (firstYear && currentFileData.value[firstYear]) {
-        return Object.keys(currentFileData.value[firstYear])
+        const countryKeys = Object.keys(currentFileData.value[firstYear])
           .filter(key => key !== 'year')
-          .slice(0, 10)
+        const orderedKeys = orderCountriesForVersion(countryKeys, versionMode.value, { sort: false })
+        return isStatisticsFile(currentFilename.value || activeTab.value)
+          ? orderedKeys
+          : orderedKeys.slice(0, 10)
       }
       return []
     })
@@ -539,7 +580,7 @@ export default {
           })
         }
       }
-      return Array.from(allCountries).sort()
+      return orderCountriesForVersion(Array.from(allCountries), versionMode.value)
     })
 
     // 过滤后的国家选项（用于搜索）
@@ -1010,6 +1051,13 @@ export default {
     }
     
     const bindScrollEvents = () => {
+      // 年份列已改为 Element Plus 原生 fixed 列，不再需要两张表的滚动同步。
+      scrollEventsBound = true
+      if (typeof document === 'undefined' || !document.querySelector('.split-table-wrapper')) {
+        return
+      }
+      scrollEventsBound = false
+
       // 防止无限重试
       if (bindAttempts > 20) {
         console.error('滚动绑定失败，已重试20次')
@@ -1401,7 +1449,7 @@ export default {
       // 等待标签切换完成，DOM 更新后再绑定
       nextTick(() => {
         setTimeout(() => {
-          if (fixedTableRef.value && scrollTableRef.value && tableData.value?.length > 0) {
+          if (fixedTableRef.value && tableData.value?.length > 0) {
             // 调用 doLayout 确保表格布局正确
             if (fixedTableRef.value.doLayout) {
               fixedTableRef.value.doLayout()
@@ -1418,7 +1466,7 @@ export default {
     
     // 监听 ref 和 tableData 变化，当它们就绪时绑定
     watch([fixedTableRef, scrollTableRef, tableData], () => {
-      if (fixedTableRef.value && scrollTableRef.value && tableData.value?.length > 0) {
+      if (fixedTableRef.value && tableData.value?.length > 0) {
         // 如果还没有绑定，尝试绑定
         if (!scrollEventsBound) {
           nextTick(() => {
@@ -1465,6 +1513,7 @@ export default {
       handleScrollTableScroll,
       tableData,
       countries,
+      primaryKeyLabel,
       countryCount,
       loading,
       editingCell,
@@ -1498,6 +1547,7 @@ export default {
       Download,
       Filter,
       FolderOpened,
+      QuestionFilled,
       activeCategory,
       categoryOrder,
       getCategoryFiles,
@@ -1531,6 +1581,8 @@ export default {
 
 .file-description span {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .output-results {
   animation: fadeIn 0.5s ease;
@@ -1550,7 +1602,7 @@ export default {
 /* 统计卡片 */
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 24px;
   margin-bottom: 32px;
 }
@@ -1587,6 +1639,7 @@ export default {
 
 .stat-content {
   flex: 1;
+  min-width: 0;
 }
 
 .stat-value {
@@ -1601,6 +1654,10 @@ export default {
   font-size: 14px;
   color: #718096;
   font-weight: 500;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 主卡片 */
@@ -1623,12 +1680,20 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.header-left > div {
+  min-width: 0;
 }
 
 .header-icon {
@@ -1650,12 +1715,15 @@ export default {
   color: #1a202c;
   margin: 0;
   line-height: 1.2;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .card-subtitle {
   font-size: 14px;
   color: #718096;
   margin: 4px 0 0 0;
+  word-break: keep-all;
 }
 
 .refresh-btn {
@@ -1680,6 +1748,17 @@ export default {
   padding: 8px;
 }
 
+.category-tabs :deep(.el-tabs__nav-scroll),
+.nested-tabs :deep(.el-tabs__nav-scroll) {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.category-tabs :deep(.el-tabs__nav),
+.nested-tabs :deep(.el-tabs__nav) {
+  flex-wrap: nowrap;
+}
+
 .category-tabs :deep(.el-tabs__nav-wrap::after) {
   display: none;
 }
@@ -1696,6 +1775,11 @@ export default {
   transition: all 0.3s ease;
   border: 2px solid transparent;
   background: rgba(255, 255, 255, 0.8);
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .category-tabs :deep(.el-tabs__item:hover) {
@@ -1719,6 +1803,9 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .category-icon {
@@ -1728,6 +1815,8 @@ export default {
 
 .category-name {
   font-weight: 600;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .category-badge {
@@ -1761,6 +1850,30 @@ export default {
   margin-right: 8px;
   transition: all 0.3s ease;
   border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.nested-tabs :deep(.el-tabs__item span) {
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.file-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.file-help-icon {
+  width: 16px;
+  height: 16px;
+  color: #667eea;
+  cursor: help;
+  flex: 0 0 auto;
 }
 
 .nested-tabs :deep(.el-tabs__item:hover) {
@@ -1807,6 +1920,14 @@ export default {
   font-size: 20px;
   font-weight: 700;
   color: #1a202c;
+  min-width: 0;
+}
+
+.function-name span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .single-value-content {
@@ -1846,13 +1967,21 @@ export default {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .tool-btn {
+  flex: 0 0 auto;
   border-radius: 10px;
   font-weight: 600;
   padding: 12px 24px;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.tool-btn :deep(span) {
+  white-space: nowrap;
 }
 
 .tool-btn:hover {
@@ -1910,7 +2039,47 @@ export default {
 }
 
 .modern-table {
+  width: 100%;
   border-radius: 12px;
+}
+
+.unified-table {
+  width: 100%;
+}
+
+.unified-table :deep(.el-table__header th) {
+  height: 72px;
+}
+
+.unified-table :deep(.el-table__body td) {
+  height: 72px;
+}
+
+.unified-table :deep(.el-table__cell .cell) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unified-table :deep(.el-table__cell.el-table-fixed-column--left),
+.unified-table :deep(.el-table__cell.el-table-fixed-column--right) {
+  background-color: #ffffff;
+  z-index: 3;
+}
+
+.unified-table :deep(.el-table__header .el-table__cell.el-table-fixed-column--left),
+.unified-table :deep(.el-table__header .el-table__cell.el-table-fixed-column--right) {
+  background: #f7f8ff;
+}
+
+.unified-table :deep(.el-table__body tr.even-row .el-table-fixed-column--left),
+.unified-table :deep(.el-table__body tr.even-row .el-table-fixed-column--right) {
+  background-color: #f8f9ff;
+}
+
+.unified-table :deep(.el-table__body tr:hover .el-table-fixed-column--left),
+.unified-table :deep(.el-table__body tr:hover .el-table-fixed-column--right) {
+  background-color: #f3f5ff;
 }
 
 .modern-table :deep(.el-table__header-wrapper) {
@@ -1997,17 +2166,56 @@ export default {
   .stats-cards {
     grid-template-columns: 1fr;
   }
+
+  .main-card :deep(.el-card__header) {
+    padding: 20px;
+  }
+
+  .card-header {
+    align-items: flex-start;
+  }
+
+  .header-left {
+    flex-basis: 100%;
+  }
+
+  .category-tabs :deep(.el-tabs__item) {
+    padding: 10px 16px;
+  }
+
+  .nested-tabs {
+    padding: 16px;
+  }
   
   .toolbar {
     flex-direction: column;
+    align-items: stretch;
   }
   
   .tool-btn {
+    flex: 0 0 auto;
     width: 100%;
   }
   
   .single-value-card {
     padding: 32px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-card {
+    padding: 20px;
+  }
+
+  .stat-icon,
+  .header-icon,
+  .refresh-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .card-title {
+    font-size: 20px;
   }
 }
 

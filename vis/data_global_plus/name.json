@@ -1,0 +1,14 @@
+[
+  {
+    "R.json": "Open Science Readiness Index",
+    "R_zero_fill.json": "Open Science Readiness Index (zero fill)",
+    "R_oa_bar.json": "Open Access Readiness Index",
+    "R_od_bar.json": "Open Data Readiness Index",
+    "R_op_bar.json": "Open Policy Readiness Index",
+    "total.json": "Annual publication counts by region",
+    "OA.json": "Annual open access publication counts by region",
+    "cooperation.json": "Annual collaborative publication counts by region",
+    "retraction.json": "Annual retraction counts by region",
+    "scientist.json": "Annual number of top 1% scientists by region"
+  }
+]

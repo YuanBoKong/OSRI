@@ -10,7 +10,7 @@
             </div>
             <div class="logo-text">
               <h1 class="app-title">OSRI指标计算平台</h1>
-              <p class="app-subtitle">Open Science Research Index Calculation System</p>
+              <p class="app-subtitle">Open Science Readiness Index</p>
             </div>
           </div>
           
@@ -44,20 +44,19 @@
           </nav>
           
           <div class="header-actions">
-            <!-- 版本切换 -->
-            <div class="version-switch">
-              <span class="version-label">全球</span>
-              <el-switch
-                v-model="isAggregationMode"
-                size="large"
-                @change="handleVersionChange"
-                active-text="聚合"
-                inactive-text="全球"
-                inline-prompt
-                active-color="#667eea"
-                inactive-color="#67c23a"
-              />
-              <span class="version-label">聚合</span>
+            <div class="header-controls">
+              <div class="mode-control">
+                <span class="mode-label">数据版本：</span>
+                <el-radio-group
+                  v-model="versionMode"
+                  size="small"
+                  @change="handleVersionChange"
+                >
+                  <el-radio-button label="global">全球</el-radio-button>
+                  <el-radio-button label="global_plus">全球Plus</el-radio-button>
+                  <el-radio-button label="aggregation">聚合</el-radio-button>
+                </el-radio-group>
+              </div>
             </div>
             <el-button 
               type="primary"
@@ -102,26 +101,32 @@ export default {
     const router = useRouter()
     const route = useRoute()
     const calculating = ref(false)
+
+    const VERSION_LABELS = {
+      global: '全球',
+      global_plus: '全球Plus',
+      aggregation: '聚合'
+    }
+
+    const normalizeVersionMode = (value) => {
+      return Object.prototype.hasOwnProperty.call(VERSION_LABELS, value) ? value : 'global'
+    }
+
+    const getVersionModeLabel = (mode) => {
+      return VERSION_LABELS[normalizeVersionMode(mode)]
+    }
     
-    // 版本模式：'global' 或 'aggregation'，从 localStorage 读取，默认为 'global'
+    // 版本模式：'global'、'global_plus' 或 'aggregation'，从 localStorage 读取，默认为 'global'
     const getStoredVersionMode = () => {
       try {
         const stored = localStorage.getItem('osri_version_mode')
-        return stored === 'aggregation' ? 'aggregation' : 'global'
+        return normalizeVersionMode(stored)
       } catch (e) {
         return 'global'
       }
     }
     
     const versionMode = ref(getStoredVersionMode())
-    
-    // 计算属性：是否为聚合模式（用于 el-switch）
-    const isAggregationMode = computed({
-      get: () => versionMode.value === 'aggregation',
-      set: (value) => {
-        versionMode.value = value ? 'aggregation' : 'global'
-      }
-    })
 
     const activeMenu = computed(() => route.path)
     const isDataVisRoute = computed(() => route.path.startsWith('/datavis'))
@@ -132,7 +137,7 @@ export default {
 
     // 版本切换处理
     const handleVersionChange = (value) => {
-      const mode = value ? 'aggregation' : 'global'
+      const mode = normalizeVersionMode(value)
       // 保存到 localStorage
       try {
         localStorage.setItem('osri_version_mode', mode)
@@ -143,8 +148,8 @@ export default {
       // 切换版本时，可以刷新当前页面数据
       // 这里只切换模式，具体的数据刷新由各个子组件监听 versionMode 变化来处理
       ElMessage.info({
-        message: `已切换到${mode === 'global' ? '全球' : '聚合'}版本`,
-        duration: 2000
+        message: `已切换到${getVersionModeLabel(mode)}版本`,
+        duration: 750
       })
     }
 
@@ -186,7 +191,7 @@ export default {
       try {
         await executeBatchCalculate(currentMode)
         ElMessage.info({
-          message: `${currentMode === 'global' ? '全球' : '聚合'}版本批量计算已启动，正在等待可视化同步完成`,
+          message: `${getVersionModeLabel(currentMode)}版本批量计算已启动，正在等待可视化同步完成`,
           duration: 2500
         })
 
@@ -194,7 +199,7 @@ export default {
         const syncedCount = Array.isArray(status.synced_files) ? status.synced_files.length : 0
 
         ElMessage.success({
-          message: `${currentMode === 'global' ? '全球' : '聚合'}版本计算完成，可视化已同步${syncedCount ? `（${syncedCount}个文件）` : ''}`,
+          message: `${getVersionModeLabel(currentMode)}版本计算完成，可视化已同步${syncedCount ? `（${syncedCount}个文件）` : ''}`,
           type: 'success',
           duration: 3500
         })
@@ -219,7 +224,6 @@ export default {
       activeMenu,
       isDataVisRoute,
       versionMode,
-      isAggregationMode,
       handleVersionChange,
       handleCalculate,
       DataAnalysis,
@@ -268,12 +272,14 @@ export default {
 .header-wrapper {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 12px clamp(16px, 3vw, 40px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 80px;
-  gap: 40px;
+  min-height: 80px;
+  height: auto;
+  gap: 12px 32px;
+  flex-wrap: wrap;
 }
 
 .logo-section {
@@ -281,6 +287,7 @@ export default {
   align-items: center;
   gap: 16px;
   flex-shrink: 0;
+  min-width: 0;
 }
 
 .logo-icon {
@@ -307,6 +314,8 @@ export default {
   color: #1a202c;
   margin: 0;
   line-height: 1.2;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .app-subtitle {
@@ -315,26 +324,46 @@ export default {
   margin: 0;
   font-weight: 400;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .main-nav {
-  flex: 1;
+  flex: 1 1 380px;
+  min-width: 0;
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.main-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-buttons {
   display: flex;
   gap: 8px;
   align-items: center;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: none;
+}
+
+.nav-buttons::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-button {
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   gap: 8px;
   padding: 12px 24px;
+  min-width: 128px;
   height: 48px;
   font-size: 16px;
   font-weight: 500;
@@ -345,6 +374,13 @@ export default {
   background: transparent;
   border: none;
   cursor: pointer;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.nav-button span {
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .nav-button:hover {
@@ -368,37 +404,48 @@ export default {
 }
 
 .header-actions {
-  flex-shrink: 0;
+  flex: 1 1 520px;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 20px;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-.version-switch {
+.header-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
-.version-label {
-  font-size: 15px;
+.mode-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  word-break: keep-all;
+  flex: 0 0 auto;
+}
+
+.mode-label {
+  font-size: 14px;
   font-weight: 600;
   color: #4a5568;
-  min-width: 40px;
-  text-align: center;
 }
 
-.version-switch :deep(.el-switch) {
-  --el-switch-on-color: #667eea;
-  --el-switch-off-color: #67c23a;
-}
-
-.version-switch :deep(.el-switch__label) {
+.mode-control .el-radio-button__inner {
   font-weight: 600;
-  font-size: 14px;
+  padding: 8px 13px;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .calculate-btn {
+  flex: 0 0 auto;
   height: 44px;
   padding: 0 28px;
   font-size: 15px;
@@ -406,6 +453,12 @@ export default {
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   transition: all 0.3s ease;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.calculate-btn span {
+  white-space: nowrap;
 }
 
 .calculate-btn:hover {
@@ -429,16 +482,16 @@ export default {
 
 .main-content--immersive {
   padding: 0;
-  display: block;
+  display: flex;
   overflow: hidden;
-  height: calc(100vh - 80px);
-  min-height: calc(100vh - 80px);
+  flex: 1;
+  min-height: 0;
 }
 
 .content-wrapper--immersive {
   max-width: none;
-  height: calc(100vh - 80px);
-  min-height: calc(100vh - 80px);
+  flex: 1;
+  min-height: 0;
 }
 
 /* 页面过渡动画 */
@@ -460,7 +513,25 @@ export default {
 /* 响应式设计 */
 @media (max-width: 1200px) {
   .header-wrapper {
-    padding: 0 24px;
+    padding: 12px 24px;
+    align-items: flex-start;
+  }
+
+  .logo-section {
+    flex: 1 1 100%;
+  }
+
+  .main-nav {
+    justify-content: flex-start;
+  }
+
+  .header-actions {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+
+  .header-controls {
+    justify-content: flex-start;
   }
   
   .main-content {
@@ -470,9 +541,8 @@ export default {
 
 @media (max-width: 768px) {
   .header-wrapper {
-    flex-wrap: wrap;
-    height: auto;
     padding: 16px;
+    gap: 12px;
   }
   
   .logo-section {
@@ -481,37 +551,83 @@ export default {
   
   .main-nav {
     width: 100%;
-    margin-top: 16px;
+    margin-top: 4px;
+    justify-content: flex-start;
   }
   
   .nav-buttons {
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
   }
   
   .nav-button {
-    flex: 1;
-    justify-content: center;
-    max-width: 200px;
+    flex: 0 0 auto;
+    max-width: none;
   }
   
   .header-actions {
     width: 100%;
-    margin-top: 16px;
+    margin-top: 4px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .header-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .mode-control {
+    flex-wrap: wrap;
   }
   
   .calculate-btn {
     width: 100%;
   }
+}
 
-  .main-content--immersive {
-    height: calc(100vh - 148px);
-    min-height: calc(100vh - 148px);
+@media (max-width: 540px) {
+  .logo-icon {
+    width: 44px;
+    height: 44px;
   }
 
-  .content-wrapper--immersive {
-    height: calc(100vh - 148px);
-    min-height: calc(100vh - 148px);
+  .app-title {
+    font-size: 20px;
+  }
+
+  .app-subtitle {
+    display: none;
+  }
+
+  .nav-button {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 44px;
+    padding: 10px 6px;
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  .nav-button .el-icon {
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .nav-button {
+    padding: 8px 4px;
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  .nav-button .el-icon {
+    font-size: 14px;
   }
 }
 </style>

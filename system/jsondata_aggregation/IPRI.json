@@ -1,0 +1,123 @@
+{
+  "2014": {
+    "STLCs": 2.305107692307692,
+    "EU27": 6.707629629629629,
+    "China": 5.5,
+    "Germany": 7.8,
+    "India": 5.5,
+    "Japan": 7.8,
+    "Russia": 4.8,
+    "United Kingdom": 7.8,
+    "United States": 7.7
+  },
+  "2015": {
+    "STLCs": 2.135953846153846,
+    "EU27": 6.506592592592592,
+    "China": 5.389,
+    "Germany": 7.607,
+    "India": 5.155,
+    "Japan": 7.977,
+    "Russia": 4.548,
+    "United Kingdom": 7.69,
+    "United States": 7.606
+  },
+  "2016": {
+    "STLCs": 2.194123076923077,
+    "EU27": 6.599962962962963,
+    "China": 5.408,
+    "Germany": 7.722,
+    "India": 5.22,
+    "Japan": 8.098,
+    "Russia": 4.579,
+    "United Kingdom": 7.755,
+    "United States": 7.737
+  },
+  "2017": {
+    "STLCs": 2.266692307692308,
+    "EU27": 6.766407407407407,
+    "China": 5.712,
+    "Germany": 7.959,
+    "India": 5.564,
+    "Japan": 8.327,
+    "Russia": 4.043,
+    "United Kingdom": 8.129,
+    "United States": 8.074
+  },
+  "2018": {
+    "STLCs": 2.323646153846154,
+    "EU27": 6.860037037037038,
+    "China": 5.904,
+    "Germany": 7.909,
+    "India": 5.639,
+    "Japan": 8.231,
+    "Russia": 4.89,
+    "United Kingdom": 8.141,
+    "United States": 8.124
+  },
+  "2019": {
+    "STLCs": 2.327584615384616,
+    "EU27": 6.9,
+    "China": 6.033,
+    "Germany": 7.85,
+    "India": 5.82,
+    "Japan": 8.323,
+    "Russia": 4.989,
+    "United Kingdom": 8.044,
+    "United States": 8.202
+  },
+  "2020": {
+    "STLCs": 2.1794,
+    "EU27": 6.882222222222222,
+    "China": 6.045,
+    "Germany": 7.741,
+    "India": 5.708,
+    "Japan": 8.362,
+    "Russia": 4.998,
+    "United Kingdom": 7.678,
+    "United States": 8.05
+  },
+  "2021": {
+    "STLCs": 2.119215384615385,
+    "EU27": 6.720555555555555,
+    "China": 6.088,
+    "Germany": 7.437,
+    "India": 5.547,
+    "Japan": 7.893,
+    "Russia": 5.055,
+    "United Kingdom": 7.52,
+    "United States": 7.993
+  },
+  "2022": {
+    "STLCs": 1.886015384615384,
+    "EU27": 6.414444444444444,
+    "China": 5.594,
+    "Germany": 7.469,
+    "India": 5.143,
+    "Japan": 7.677,
+    "Russia": 4.466,
+    "United Kingdom": 7.299,
+    "United States": 7.566
+  },
+  "2023": {
+    "STLCs": 1.9256,
+    "EU27": 6.321111111111111,
+    "China": 5.336,
+    "Germany": 7.748,
+    "India": 5.072,
+    "Japan": 7.583,
+    "Russia": 3.935,
+    "United Kingdom": 7.489,
+    "United States": 7.525
+  },
+  "2024": {
+    "STLCs": 1.909676923076923,
+    "EU27": 6.281777777777778,
+    "China": 5.285,
+    "Germany": 7.681,
+    "India": 5.09,
+    "Japan": 7.588,
+    "Russia": 3.797,
+    "United Kingdom": 7.452,
+    "United States": 7.494
+  }
+}

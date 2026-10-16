@@ -11,27 +11,11 @@ from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
-# 需要同步的文件列表
-SYNC_FILES = [
-    'OA.json',
-    'R_op_bar.json',
-    'scientist.json',
-    'cooperation.json',
-    'R_oa_bar.json',
-    'R.json',
-    'R_od_bar.json',
-    'retraction.json',
-    'total.json'
-]
+# Share all modes and output names with the API synchronization pipeline.
+from vis_sync import VIS_SYNC_FILES, SOURCE_TO_TARGET_DIR
 
-# 目录映射关系
-# 源目录 -> 目标目录
-DIR_MAPPINGS = {
-    'jsondata': 'data',
-    'jsondata_aggregation': 'data_aggregation',
-    'output': 'data',
-    'output_aggregation': 'data_aggregation'
-}
+SYNC_FILES = sorted(VIS_SYNC_FILES)
+DIR_MAPPINGS = {source: target.name for source, target in SOURCE_TO_TARGET_DIR.items()}
 
 
 class FileSyncHandler(FileSystemEventHandler):

@@ -160,88 +160,71 @@
             </div>
 
             <div class="table-container">
-              <div class="split-table-wrapper">
-                <!-- 左侧固定表格：只显示年份列 -->
-                <div class="fixed-table-left" ref="fixedTableLeftRef">
-                  <el-table
-                    ref="fixedTableRef"
-                    :data="tableData"
-                    height="600"
-                    v-loading="loading"
-                    class="modern-table fixed-table"
-                    :row-class-name="tableRowClassName"
-                  >
-                    <el-table-column prop="year" label="年份" width="120" align="center">
-                      <template #default="scope">
-                        <div class="year-cell">
-                          <el-input
-                            v-if="editingCell === `${scope.row.year}_year`"
-                            v-model="scope.row.year"
-                            @blur="saveCellEdit(scope.row, 'year')"
-                            @keyup.enter="saveCellEdit(scope.row, 'year')"
-                            size="large"
-                          />
-                          <div v-else @click="startCellEdit(`${scope.row.year}_year`)" class="editable-cell">
-                            {{ scope.row.year }}
-                          </div>
-                        </div>
-                      </template>
-                    </el-table-column>
-                  </el-table>
-                </div>
-                
-                <!-- 右侧滚动表格：显示其他列 -->
-                <div class="scroll-table-right" ref="scrollTableRightRef">
-                  <el-table
-                    ref="scrollTableRef"
-                    :data="tableData"
-                    height="600"
-                    v-loading="loading"
-                    class="modern-table scroll-table"
-                    :row-class-name="tableRowClassName"
-                  >
-                    <el-table-column
-                      v-for="country in countries"
-                      :key="country"
-                      :prop="country"
-                      :label="country"
-                      width="140"
-                      align="center"
-                    >
-                      <template #default="scope">
-                        <div class="data-cell">
-                          <el-input-number
-                            v-if="editingCell === `${scope.row.year}_${country}`"
-                            v-model="scope.row[country]"
-                            :precision="2"
-                            @blur="saveCellEdit(scope.row, country)"
-                            @keyup.enter="saveCellEdit(scope.row, country)"
-                            size="small"
-                            :controls="false"
-                          />
-                          <div v-else @click="startCellEdit(`${scope.row.year}_${country}`)" class="editable-cell">
-                            {{ scope.row[country] !== null && scope.row[country] !== undefined 
-                              ? Number(scope.row[country]).toLocaleString() 
-                              : '—' }}
-                          </div>
-                        </div>
-                      </template>
-                    </el-table-column>
-                    
-                    <el-table-column label="操作" width="140" align="center">
-                      <template #default="scope">
-                        <el-button
-                          type="danger"
-                          size="small"
-                          @click="handleDeleteYear(file.filename, scope.row.year)"
-                          :icon="Delete"
-                          circle
-                        />
-                      </template>
-                    </el-table-column>
-                  </el-table>
-                </div>
-              </div>
+              <el-table
+                ref="fixedTableRef"
+                :data="tableData"
+                height="600"
+                v-loading="loading"
+                class="modern-table unified-table"
+                :row-class-name="tableRowClassName"
+              >
+                <el-table-column prop="year" label="年份" width="120" align="center" fixed="left">
+                  <template #default="scope">
+                    <div class="year-cell">
+                      <el-input
+                        v-if="editingCell === `${scope.row.year}_year`"
+                        v-model="scope.row.year"
+                        @blur="saveCellEdit(scope.row, 'year')"
+                        @keyup.enter="saveCellEdit(scope.row, 'year')"
+                        size="large"
+                      />
+                      <div v-else @click="startCellEdit(`${scope.row.year}_year`)" class="editable-cell">
+                        {{ scope.row.year }}
+                      </div>
+                    </div>
+                  </template>
+                </el-table-column>
+
+                <el-table-column
+                  v-for="country in countries"
+                  :key="country"
+                  :prop="country"
+                  :label="country"
+                  width="140"
+                  align="center"
+                >
+                  <template #default="scope">
+                    <div class="data-cell">
+                      <el-input-number
+                        v-if="editingCell === `${scope.row.year}_${country}`"
+                        v-model="scope.row[country]"
+                        :precision="2"
+                        @blur="saveCellEdit(scope.row, country)"
+                        @keyup.enter="saveCellEdit(scope.row, country)"
+                        size="small"
+                        :controls="false"
+                      />
+                      <div v-else @click="startCellEdit(`${scope.row.year}_${country}`)" class="editable-cell">
+                        {{ scope.row[country] !== null && scope.row[country] !== undefined
+                          ? Number(scope.row[country]).toLocaleString()
+                          : '—' }}
+                      </div>
+                    </div>
+                  </template>
+                </el-table-column>
+
+                <el-table-column label="操作" width="140" align="center" fixed="right">
+                  <template #default="scope">
+                    <el-button
+                      type="danger"
+                      size="small"
+                      @click="handleDeleteYear(file.filename, scope.row.year)"
+                      :icon="Delete"
+                      circle
+                    />
+                  </template>
+                </el-table-column>
+              </el-table>
             </div>
           </div>
         </el-tab-pane>
@@ -534,6 +517,7 @@ import { ref, reactive, onMounted, computed, nextTick, watch, inject } from 'vue
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Plus, Document, Delete, FolderOpened, Calendar, Location, InfoFilled, WarningFilled, CircleCheckFilled, Upload, Download, Filter } from '@element-plus/icons-vue'
 import { listJsonDataFiles, getJsonDataFile, updateJsonDataFile, addJsonDataData, deleteJsonDataData, importExcelData, exportJsonDataToExcel, filterJsonDataFile } from '../api/jsondata'
+import { orderCountriesForVersion } from '../utils/countryOrder'
 
 export default {
   name: 'JsonDataManagement',
@@ -659,9 +643,9 @@ export default {
       
       const firstYear = Object.keys(currentFileData.value)[0]
       if (firstYear && currentFileData.value[firstYear]) {
-        return Object.keys(currentFileData.value[firstYear])
+        const countryKeys = Object.keys(currentFileData.value[firstYear])
           .filter(key => key !== 'year')
-          .slice(0, 10)
+        return orderCountriesForVersion(countryKeys, versionMode.value, { sort: false }).slice(0, 10)
       }
       return []
     })
@@ -705,7 +689,7 @@ export default {
           })
         }
       }
-      return Array.from(allCountries).sort()
+      return orderCountriesForVersion(Array.from(allCountries), versionMode.value)
     })
 
     // 过滤后的国家选项（用于搜索）
@@ -1475,6 +1459,13 @@ export default {
     }
     
     const bindScrollEvents = () => {
+      // 年份列已改为 Element Plus 原生 fixed 列，不再需要两张表的滚动同步。
+      scrollEventsBound = true
+      if (typeof document === 'undefined' || !document.querySelector('.split-table-wrapper')) {
+        return
+      }
+      scrollEventsBound = false
+
       // 防止无限重试
       if (bindAttempts > 20) {
         console.error('滚动绑定失败，已重试20次')
@@ -1850,7 +1841,7 @@ export default {
       // 等待标签切换完成，DOM 更新后再绑定
       nextTick(() => {
         setTimeout(() => {
-          if (fixedTableRef.value && scrollTableRef.value && tableData.value?.length > 0) {
+          if (fixedTableRef.value && tableData.value?.length > 0) {
             // 调用 doLayout 确保表格布局正确
             if (fixedTableRef.value.doLayout) {
               fixedTableRef.value.doLayout()
@@ -1867,7 +1858,7 @@ export default {
     
     // 监听 ref 和 tableData 变化，当它们就绪时绑定
     watch([fixedTableRef, scrollTableRef, tableData], () => {
-      if (fixedTableRef.value && scrollTableRef.value && tableData.value?.length > 0) {
+      if (fixedTableRef.value && tableData.value?.length > 0) {
         // 如果还没有绑定，尝试绑定
         if (!scrollEventsBound) {
           nextTick(() => {
@@ -2003,6 +1994,8 @@ export default {
 
 .file-description span {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .json-data-management {
   animation: fadeIn 0.5s ease;
@@ -2022,7 +2015,7 @@ export default {
 /* 统计卡片 */
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 24px;
   margin-bottom: 32px;
 }
@@ -2059,6 +2052,7 @@ export default {
 
 .stat-content {
   flex: 1;
+  min-width: 0;
 }
 
 .stat-value {
@@ -2073,6 +2067,10 @@ export default {
   font-size: 14px;
   color: #718096;
   font-weight: 500;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 主卡片 */
@@ -2095,12 +2093,16 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .header-right {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .warning-info {
@@ -2115,6 +2117,8 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .warning-info:hover {
@@ -2140,6 +2144,7 @@ export default {
 
 .warning-text {
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .warning-details {
@@ -2186,6 +2191,12 @@ export default {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.header-left > div {
+  min-width: 0;
 }
 
 .header-icon {
@@ -2207,12 +2218,15 @@ export default {
   color: #1a202c;
   margin: 0;
   line-height: 1.2;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .card-subtitle {
   font-size: 14px;
   color: #718096;
   margin: 4px 0 0 0;
+  word-break: keep-all;
 }
 
 .refresh-btn {
@@ -2225,6 +2239,15 @@ export default {
   margin: 0;
   padding: 0 32px;
   background: rgba(102, 126, 234, 0.03);
+}
+
+.modern-tabs :deep(.el-tabs__nav-scroll) {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.modern-tabs :deep(.el-tabs__nav) {
+  flex-wrap: nowrap;
 }
 
 .modern-tabs :deep(.el-tabs__nav-wrap::after) {
@@ -2240,6 +2263,16 @@ export default {
   line-height: 56px;
   color: #4a5568;
   transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.modern-tabs :deep(.el-tabs__item span) {
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .modern-tabs :deep(.el-tabs__item:hover) {
@@ -2263,13 +2296,21 @@ export default {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .tool-btn {
+  flex: 0 0 auto;
   border-radius: 10px;
   font-weight: 600;
   padding: 12px 24px;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.tool-btn :deep(span) {
+  white-space: nowrap;
 }
 
 .tool-btn:hover {
@@ -2327,7 +2368,47 @@ export default {
 }
 
 .modern-table {
+  width: 100%;
   border-radius: 12px;
+}
+
+.unified-table {
+  width: 100%;
+}
+
+.unified-table :deep(.el-table__header th) {
+  height: 72px;
+}
+
+.unified-table :deep(.el-table__body td) {
+  height: 72px;
+}
+
+.unified-table :deep(.el-table__cell .cell) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unified-table :deep(.el-table__cell.el-table-fixed-column--left),
+.unified-table :deep(.el-table__cell.el-table-fixed-column--right) {
+  background-color: #ffffff;
+  z-index: 3;
+}
+
+.unified-table :deep(.el-table__header .el-table__cell.el-table-fixed-column--left),
+.unified-table :deep(.el-table__header .el-table__cell.el-table-fixed-column--right) {
+  background: #f7f8ff;
+}
+
+.unified-table :deep(.el-table__body tr.even-row .el-table-fixed-column--left),
+.unified-table :deep(.el-table__body tr.even-row .el-table-fixed-column--right) {
+  background-color: #f8f9ff;
+}
+
+.unified-table :deep(.el-table__body tr:hover .el-table-fixed-column--left),
+.unified-table :deep(.el-table__body tr:hover .el-table-fixed-column--right) {
+  background-color: #f3f5ff;
 }
 
 .modern-table :deep(.el-table__header-wrapper) {
@@ -2414,13 +2495,49 @@ export default {
   .stats-cards {
     grid-template-columns: 1fr;
   }
+
+  .main-card :deep(.el-card__header) {
+    padding: 20px;
+  }
+
+  .card-header,
+  .header-right {
+    align-items: flex-start;
+  }
+
+  .header-left {
+    flex-basis: 100%;
+  }
+
+  .modern-tabs :deep(.el-tabs__header) {
+    padding: 0 16px;
+  }
   
   .toolbar {
     flex-direction: column;
+    align-items: stretch;
   }
   
   .tool-btn {
+    flex: 0 0 auto;
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-card {
+    padding: 20px;
+  }
+
+  .stat-icon,
+  .header-icon,
+  .refresh-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .card-title {
+    font-size: 20px;
   }
 }
 

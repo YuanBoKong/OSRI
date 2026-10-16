@@ -1,8 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Custom Title",
-    "description": "This is a very custom OpenAPI schema",
+    "title": "开放科学数据可视化API",
     "version": "1.0.0"
   },
   "paths": {
@@ -35,11 +34,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -76,11 +75,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -117,11 +116,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -167,11 +166,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -226,11 +225,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -285,11 +284,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -344,11 +343,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -376,7 +375,7 @@
     "/api/data/{filename}/filter": {
       "get": {
         "summary": "Filter Data",
-        "description": "筛选数据，支持多种筛选条件\n\n- countries: 国家列表，逗号分隔，如 \"China,United States,Germany\"\n- start_year: 起始年份\n- end_year: 结束年份\n- continent: 大洲名称\n- format: 返回格式，nested(默认) 或 flat\n- data_source: 数据源，global(默认) 或 aggregation",
+        "description": "筛选数据，支持多种筛选条件\n\n- countries: 国家列表，逗号分隔，如 \"China,United States,Germany\"\n- start_year: 起始年份\n- end_year: 结束年份\n- continent: 大洲名称\n- format: 返回格式，nested(默认) 或 flat\n- data_source: 数据源，global(默认)、global_plus 或 aggregation",
         "operationId": "filter_data_api_data__filename__filter_get",
         "parameters": [
           {
@@ -485,11 +484,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -535,11 +534,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -585,11 +584,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -658,11 +657,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -780,11 +779,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -889,11 +888,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "数据源: global 或 aggregation",
+              "description": "数据源: global、global_plus 或 aggregation",
               "default": "global",
               "title": "Data Source"
             },
-            "description": "数据源: global 或 aggregation"
+            "description": "数据源: global、global_plus 或 aggregation"
           }
         ],
         "responses": {
@@ -921,7 +920,7 @@
     "/api/all-data": {
       "get": {
         "summary": "Get All Data",
-        "description": "获取所有数据文件的内容\n返回data和data_aggregation目录下的所有数据文件，以JSON格式返回\n\n返回格式：\n{\n    \"global\": {\n        \"filename1.json\": { ... },\n        \"filename2.json\": { ... }\n    },\n    \"aggregation\": {\n        \"filename1.json\": { ... },\n        \"filename2.json\": { ... }\n    }\n}",
+        "description": "获取所有数据文件的内容\n返回data、data_global_plus和data_aggregation目录下的所有数据文件，以JSON格式返回\n\n返回格式：\n{\n    \"global\": {\n        \"filename1.json\": { ... },\n        \"filename2.json\": { ... }\n    },\n    \"global_plus\": {\n        \"filename1.json\": { ... },\n        \"filename2.json\": { ... }\n    },\n    \"aggregation\": {\n        \"filename1.json\": { ... },\n        \"filename2.json\": { ... }\n    }\n}",
         "operationId": "get_all_data_api_all_data_get",
         "responses": {
           "200": {

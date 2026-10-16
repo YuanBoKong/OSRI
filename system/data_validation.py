@@ -79,13 +79,19 @@ def _validate_output_dataset(filename: str, data: Dict[str, Any]):
         _ensure(_is_scalar_value(data["value"]), f"{filename} 的 value 必须是标量")
         return
 
+    if filename.endswith("_stats_by_country.json"):
+        for entity, mapping in data.items():
+            _ensure(isinstance(entity, str) and entity.strip(), f"{filename} 中存在非法地区/字段名")
+            _validate_scalar_map(filename, entity, mapping)
+        return
+
     for year, mapping in data.items():
         _validate_year_key(year, filename)
         _validate_scalar_map(filename, year, mapping)
 
 
 def validate_file_payload(directory_name: str, filename: str, data: Dict[str, Any]):
-    if directory_name in {"jsondata", "jsondata_aggregation"}:
+    if directory_name in {"jsondata", "jsondata_aggregation", "jsondata_global_plus"}:
         if filename == "world_total.json":
             _validate_world_total_dataset(filename, data)
             return
@@ -95,7 +101,7 @@ def validate_file_payload(directory_name: str, filename: str, data: Dict[str, An
         _validate_year_country_dataset(filename, data)
         return
 
-    if directory_name in {"output", "output_aggregation"}:
+    if directory_name in {"output", "output_aggregation", "output_global_plus"}:
         _validate_output_dataset(filename, data)
 
 

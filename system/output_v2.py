@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from pathlib import Path
 
 def process_journals_data(mode="加和"):
     """
@@ -11,11 +12,11 @@ def process_journals_data(mode="加和"):
             - "平均": STLCs和EU27使用平均值方式计算
     """
     # 文件路径
-    tag_file = "/Users/xiaokong/temp_work/2026/pdq/UN193_with_tag.xlsx"
-    journals_file = "/Users/xiaokong/temp_work/2026/pdq/excel/IPRI.xlsx"
+    tag_file = str(Path(__file__).resolve().parent.parent / "data/reference/UN193_with tag.xlsx")
+    journals_file = str(Path(__file__).resolve().parent / "excel/IPRI.xlsx")
     
     # 根据mode设置输出文件名
-    base_output_file = "/Users/xiaokong/temp_work/2026/pdq/excel/IPRI_v2.xlsx"
+    base_output_file = str(Path(__file__).resolve().parent / "excel/IPRI_v2.xlsx")
     if mode == "平均":
         # 如果文件名包含_v2，替换为_v2_平均，否则添加_平均
         if base_output_file.endswith("_v2.xlsx"):

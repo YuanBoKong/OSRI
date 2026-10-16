@@ -57,11 +57,25 @@ app.add_middleware(
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 DATA_AGGREGATION_DIR = BASE_DIR / "data_aggregation"
+DATA_GLOBAL_PLUS_DIR = BASE_DIR / "data_global_plus"
+DATA_SOURCE_DIRS = {
+    "global": DATA_DIR,
+    "aggregation": DATA_AGGREGATION_DIR,
+    "global_plus": DATA_GLOBAL_PLUS_DIR,
+}
 
 # 缓存数据（按数据源分别缓存，基于文件修改时间自动失效）
 _data_cache: Dict[str, Dict[str, Any]] = {}  # key: "{data_source}:{filename}"
 _continent_data: Dict[str, Dict[str, Any]] = {}  # key: data_source
 _name_mapping: Dict[str, Dict[str, Any]] = {}  # key: data_source
+
+
+def normalize_data_source(data_source: str = "global") -> str:
+    return data_source if data_source in DATA_SOURCE_DIRS else "global"
+
+
+def get_data_dir(data_source: str = "global") -> Path:
+    return DATA_SOURCE_DIRS[normalize_data_source(data_source)]
 
 
 def load_json_file(file_path: Path) -> Dict:
@@ -88,10 +102,8 @@ def load_cached_json(cache: Dict[str, Dict[str, Any]], cache_key: str, file_path
 
 def get_data_file(filename: str, data_source: str = "global") -> Path:
     """获取数据文件路径，根据数据源从对应目录查找"""
-    if data_source == "aggregation":
-        file_path = DATA_AGGREGATION_DIR / filename
-    else:
-        file_path = DATA_DIR / filename
+    data_source = normalize_data_source(data_source)
+    file_path = get_data_dir(data_source) / filename
     
     if file_path.exists():
         return file_path
@@ -100,6 +112,7 @@ def get_data_file(filename: str, data_source: str = "global") -> Path:
 
 def get_cached_data(filename: str, data_source: str = "global") -> Dict:
     """获取缓存的数据，文件更新后自动重新加载。"""
+    data_source = normalize_data_source(data_source)
     cache_key = f"{data_source}:{filename}"
     file_path = get_data_file(filename, data_source)
     return load_cached_json(_data_cache, cache_key, file_path)
@@ -107,19 +120,15 @@ def get_cached_data(filename: str, data_source: str = "global") -> Dict:
 
 def get_continent_data(data_source: str = "global") -> Dict:
     """获取大洲映射数据"""
-    if data_source == "aggregation":
-        file_path = DATA_AGGREGATION_DIR / "continent.json"
-    else:
-        file_path = DATA_DIR / "continent.json"
+    data_source = normalize_data_source(data_source)
+    file_path = get_data_dir(data_source) / "continent.json"
     return load_cached_json(_continent_data, data_source, file_path)
 
 
 def get_name_mapping(data_source: str = "global") -> Dict:
     """获取文件名映射数据"""
-    if data_source == "aggregation":
-        file_path = DATA_AGGREGATION_DIR / "name.json"
-    else:
-        file_path = DATA_DIR / "name.json"
+    data_source = normalize_data_source(data_source)
+    file_path = get_data_dir(data_source) / "name.json"
     name_data = load_cached_json(_name_mapping, data_source, file_path)
     return name_data[0] if isinstance(name_data, list) else name_data
 
@@ -144,28 +153,24 @@ async def root():
 
 
 @app.get("/api/name")
-async def get_name_mapping_api(data_source: str = Query("global", description="数据源: global 或 aggregation")):
+async def get_name_mapping_api(data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")):
     """返回文件名映射表"""
     return get_name_mapping(data_source)
 
 
 @app.get("/api/continent")
-async def get_continent_mapping(data_source: str = Query("global", description="数据源: global 或 aggregation")):
+async def get_continent_mapping(data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")):
     """返回大洲映射表"""
     return get_continent_data(data_source)
 
 
 @app.get("/api/files")
-async def get_available_files(data_source: str = Query("global", description="数据源: global 或 aggregation")):
+async def get_available_files(data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")):
     """返回所有可用的数据文件列表"""
     files = []
     name_mapping = get_name_mapping(data_source)
     
-    # 根据数据源选择目录
-    if data_source == "aggregation":
-        target_dir = DATA_AGGREGATION_DIR
-    else:
-        target_dir = DATA_DIR
+    target_dir = get_data_dir(data_source)
     
     # 扫描对应目录
     for file_path in target_dir.glob("*.json"):
@@ -183,7 +188,7 @@ async def get_available_files(data_source: str = Query("global", description="�
 
 
 @app.get("/api/data/{filename}")
-async def get_full_data(filename: str, data_source: str = Query("global", description="数据源: global 或 aggregation")):
+async def get_full_data(filename: str, data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")):
     """获取完整数据"""
     try:
         data = get_cached_data(filename, data_source)
@@ -200,7 +205,7 @@ async def get_full_data(filename: str, data_source: str = Query("global", descri
 
 
 @app.get("/api/data/{filename}/year/{year}")
-async def get_data_by_year(filename: str, year: str, data_source: str = Query("global", description="数据源: global 或 aggregation")):
+async def get_data_by_year(filename: str, year: str, data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")):
     """按年份获取数据"""
     try:
         data = get_cached_data(filename, data_source)
@@ -225,7 +230,7 @@ async def get_data_by_year(filename: str, year: str, data_source: str = Query("g
 
 
 @app.get("/api/data/{filename}/country/{country}")
-async def get_data_by_country(filename: str, country: str, data_source: str = Query("global", description="数据源: global 或 aggregation")):
+async def get_data_by_country(filename: str, country: str, data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")):
     """按国家获取时间序列数据"""
     try:
         data = get_cached_data(filename, data_source)
@@ -254,7 +259,7 @@ async def get_data_by_country(filename: str, country: str, data_source: str = Qu
 
 
 @app.get("/api/data/{filename}/continent/{continent}")
-async def get_data_by_continent(filename: str, continent: str, data_source: str = Query("global", description="数据源: global 或 aggregation")):
+async def get_data_by_continent(filename: str, continent: str, data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")):
     """按大洲获取数据"""
     try:
         data = get_cached_data(filename, data_source)
@@ -303,7 +308,7 @@ async def filter_data(
     end_year: Optional[str] = Query(None, description="结束年份"),
     continent: Optional[str] = Query(None, description="大洲名称"),
     format: Optional[str] = Query("nested", description="返回格式: nested(嵌套) 或 flat(扁平)"),
-    data_source: str = Query("global", description="数据源: global 或 aggregation")
+    data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")
 ):
     """
     筛选数据，支持多种筛选条件
@@ -313,7 +318,7 @@ async def filter_data(
     - end_year: 结束年份
     - continent: 大洲名称
     - format: 返回格式，nested(默认) 或 flat
-    - data_source: 数据源，global(默认) 或 aggregation
+    - data_source: 数据源，global(默认)、global_plus 或 aggregation
     """
     try:
         data = get_cached_data(filename, data_source)
@@ -411,7 +416,7 @@ async def filter_data(
 
 
 @app.get("/api/data/{filename}/countries")
-async def get_countries_in_data(filename: str, data_source: str = Query("global", description="数据源: global 或 aggregation")):
+async def get_countries_in_data(filename: str, data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")):
     """获取数据文件中包含的所有国家列表"""
     try:
         data = get_cached_data(filename, data_source)
@@ -435,7 +440,7 @@ async def get_countries_in_data(filename: str, data_source: str = Query("global"
 
 
 @app.get("/api/data/{filename}/years")
-async def get_years_in_data(filename: str, data_source: str = Query("global", description="数据源: global 或 aggregation")):
+async def get_years_in_data(filename: str, data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")):
     """获取数据文件中包含的所有年份列表"""
     try:
         data = get_cached_data(filename, data_source)
@@ -461,7 +466,7 @@ async def get_top_countries(
     filename: str,
     year: str = Query(..., description="年份"),
     top_n: int = Query(20, description="返回前N名，默认20"),
-    data_source: str = Query("global", description="数据源: global 或 aggregation")
+    data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")
 ):
     """
     获取指定年份排名前N的国家列表
@@ -521,7 +526,7 @@ async def get_ranking_data(
     start_year: Optional[str] = Query(None, description="起始年份"),
     end_year: Optional[str] = Query(None, description="结束年份"),
     top_n: Optional[int] = Query(None, description="返回前N名，为空则返回所有"),
-    data_source: str = Query("global", description="数据源: global 或 aggregation")
+    data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")
 ):
     """
     获取排名数据，按年份返回每个国家的排名和数值
@@ -612,7 +617,7 @@ async def generate_rank_flow_chart(
     end_year: str = Query(..., description="结束年份"),
     display_limit: int = Query(26, description="显示限制，默认26"),
     title: str = Query("", description="图表标题"),
-    data_source: str = Query("global", description="数据源: global 或 aggregation")
+    data_source: str = Query("global", description="数据源: global、global_plus 或 aggregation")
 ):
     """
     生成排名变化图（使用Python matplotlib）
@@ -792,11 +797,15 @@ async def generate_rank_flow_chart(
 async def get_all_data():
     """
     获取所有数据文件的内容
-    返回data和data_aggregation目录下的所有数据文件，以JSON格式返回
+    返回data、data_global_plus和data_aggregation目录下的所有数据文件，以JSON格式返回
     
     返回格式：
     {
         "global": {
+            "filename1.json": { ... },
+            "filename2.json": { ... }
+        },
+        "global_plus": {
             "filename1.json": { ... },
             "filename2.json": { ... }
         },
@@ -809,32 +818,19 @@ async def get_all_data():
     try:
         result = {
             "global": {},
+            "global_plus": {},
             "aggregation": {}
         }
-        
-        # 扫描data目录
-        for file_path in DATA_DIR.glob("*.json"):
-            filename = file_path.name
-            # 排除配置文件和映射文件
-            if filename not in ["continent.json", "name.json"]:
-                try:
-                    data = load_json_file(file_path)
-                    result["global"][filename] = data
-                except Exception as e:
-                    # 如果某个文件加载失败，记录错误但继续处理其他文件
-                    result["global"][filename] = {"error": f"Failed to load: {str(e)}"}
-        
-        # 扫描data_aggregation目录
-        for file_path in DATA_AGGREGATION_DIR.glob("*.json"):
-            filename = file_path.name
-            # 排除配置文件和映射文件
-            if filename not in ["continent.json", "name.json"]:
-                try:
-                    data = load_json_file(file_path)
-                    result["aggregation"][filename] = data
-                except Exception as e:
-                    # 如果某个文件加载失败，记录错误但继续处理其他文件
-                    result["aggregation"][filename] = {"error": f"Failed to load: {str(e)}"}
+
+        for data_source, data_dir in DATA_SOURCE_DIRS.items():
+            for file_path in data_dir.glob("*.json"):
+                filename = file_path.name
+                if filename not in ["continent.json", "name.json"]:
+                    try:
+                        data = load_json_file(file_path)
+                        result[data_source][filename] = data
+                    except Exception as e:
+                        result[data_source][filename] = {"error": f"Failed to load: {str(e)}"}
         
         return {
             "message": "All data files loaded",
@@ -843,6 +839,10 @@ async def get_all_data():
                 "global": {
                     "total_files": len(result["global"]),
                     "files": list(result["global"].keys())
+                },
+                "global_plus": {
+                    "total_files": len(result["global_plus"]),
+                    "files": list(result["global_plus"].keys())
                 },
                 "aggregation": {
                     "total_files": len(result["aggregation"]),

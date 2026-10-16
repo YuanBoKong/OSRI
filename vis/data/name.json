@@ -1,5 +1,6 @@
 [{
     "R.json": "Open Science Readiness Index",
+    "R_zero_fill.json": "Open Science Readiness Index (zero fill)",
     "R_oa_bar.json": "Open Access Readiness Index",
     "R_od_bar.json": "Open Data Readiness Index",
     "R_op_bar.json": "Open Policy Readiness Index",

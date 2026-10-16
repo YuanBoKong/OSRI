@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
+const backendTarget = 'http://localhost:6001'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
@@ -16,18 +18,35 @@ export default defineConfig({
     port: 6002,
     host: '0.0.0.0', // 允许内网访问
     proxy: {
+      '/OSRI/api': {
+        target: backendTarget,
+        changeOrigin: true,
+        ws: true,
+        rewrite: path => path.replace(/^\/OSRI\/api/, '/api')
+      },
+      '/OSRI/vis-api': {
+        target: backendTarget,
+        changeOrigin: true,
+        ws: true,
+        rewrite: path => path.replace(/^\/OSRI\/vis-api/, '/vis-api')
+      },
+      '/OSRI/osri-vis': {
+        target: backendTarget,
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/OSRI\/osri-vis/, '/osri-vis')
+      },
       '/api': {
-        target: 'http://localhost:6001',
+        target: backendTarget,
         changeOrigin: true,
         ws: true
       },
       '/vis-api': {
-        target: 'http://localhost:6001',
+        target: backendTarget,
         changeOrigin: true,
         ws: true
       },
       '/osri-vis': {
-        target: 'http://localhost:6001',
+        target: backendTarget,
         changeOrigin: true
       }
     }

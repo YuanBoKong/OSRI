@@ -18,15 +18,18 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+            min-width: 0;
         }
         
         /* 左侧导航栏 */
         .sidebar {
+            flex: 0 0 250px;
             width: 250px;
             background: #2c3e50;
             color: white;
             padding: 20px 0;
             overflow-y: auto;
+            overflow-x: auto;
             box-shadow: 2px 0 8px rgba(0,0,0,0.1);
         }
         
@@ -44,6 +47,11 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
+            word-break: keep-all;
+        }
+
+        .sidebar-header h1 span {
+            white-space: nowrap;
         }
         
         .nav-item {
@@ -51,6 +59,8 @@
             cursor: pointer;
             transition: background 0.3s;
             border-left: 3px solid transparent;
+            white-space: nowrap;
+            word-break: keep-all;
         }
         
         .nav-item:hover {
@@ -65,6 +75,7 @@
         /* 主内容区 */
         .main-content {
             flex: 1;
+            min-width: 0;
             overflow-y: auto;
             padding: 20px;
         }
@@ -86,12 +97,25 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+
+        .chart-section h2 > span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            word-break: keep-all;
         }
         
         .export-buttons {
             display: inline-flex;
             gap: 8px;
             align-items: center;
+            flex: 0 0 auto;
+            flex-wrap: wrap;
         }
         
         .export-btn {
@@ -106,6 +130,9 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            justify-content: center;
+            white-space: nowrap;
+            word-break: keep-all;
         }
         
         .export-btn:hover {
@@ -137,11 +164,12 @@
             gap: 15px;
             align-items: center;
             flex-wrap: wrap;
+            min-width: 0;
         }
         
         .search-box {
             flex: 1;
-            min-width: 300px;
+            min-width: min(100%, 300px);
             position: relative;
             z-index: 100;
         }
@@ -185,6 +213,7 @@
             cursor: pointer;
             transition: background 0.2s;
             border-bottom: 1px solid #f0f0f0;
+            overflow-wrap: anywhere;
         }
         
         .data-item:last-child {
@@ -202,6 +231,44 @@
         
         .data-item-name {
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .data-help-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid #667eea;
+            color: #667eea;
+            font-size: 11px;
+            line-height: 14px;
+            text-align: center;
+            cursor: help;
+            flex: 0 0 auto;
+        }
+
+        .data-help-tooltip {
+            position: fixed;
+            z-index: 10000;
+            max-width: 360px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            background: rgba(38, 50, 56, 0.96);
+            color: white;
+            font-size: 13px;
+            line-height: 1.5;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity 0.12s ease, transform 0.12s ease;
+        }
+
+        .data-help-tooltip.show {
+            opacity: 1;
+            transform: translateY(0);
         }
         
         .data-item-file {
@@ -219,6 +286,8 @@
             transition: all 0.3s;
             background: #667eea;
             color: white;
+            white-space: nowrap;
+            word-break: keep-all;
         }
         
         .btn:hover {
@@ -275,11 +344,117 @@
         .empty-state-icon {
             font-size: 48px;
             margin-bottom: 10px;
-        }        
+        }
         .nav-item.disabled {
             opacity: 0.5;
             cursor: not-allowed;
             pointer-events: none;
+        }
+
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .chart-controls label,
+        .chart-controls span,
+        .chart-controls select,
+        .chart-controls button,
+        #compare-selected-countries span,
+        #compare-clear-btn,
+        #compare-update-btn {
+            white-space: nowrap;
+            word-break: keep-all;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow: auto;
+            }
+
+            .sidebar {
+                flex: 0 0 auto;
+                width: 100%;
+                padding: 12px;
+                white-space: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+
+            .sidebar-header {
+                padding: 0 0 12px;
+                margin-bottom: 12px;
+            }
+
+            .sidebar-header h1 {
+                flex-direction: row;
+                justify-content: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .nav-item {
+                display: inline-flex;
+                align-items: center;
+                margin-right: 8px;
+                border-left: 0;
+                border-bottom: 3px solid transparent;
+            }
+
+            .nav-item.active {
+                border-left-color: transparent;
+                border-bottom-color: #667eea;
+            }
+
+            .main-content {
+                width: 100%;
+                overflow-y: visible;
+                padding: 12px;
+            }
+
+            .chart-section {
+                padding: 18px;
+                margin-bottom: 18px;
+            }
+
+            .chart-section h2 {
+                font-size: 20px;
+            }
+
+            .chart-container {
+                height: 480px;
+            }
+
+            #tier-bar-chart {
+                min-height: 600px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .chart-section h2 {
+                align-items: flex-start;
+            }
+
+            .chart-section h2 > span,
+            .export-buttons,
+            .btn,
+            .search-box {
+                width: 100%;
+            }
+
+            .export-btn {
+                flex: 1 0 120px;
+            }
+
+            .chart-controls > * {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -320,7 +495,7 @@
     </div>
     
     <!-- 主内容区 -->
-    <div class="main-content">        
+    <div class="main-content">
         <!-- 数据选择器 -->
         <div class="data-selector">
             <h3>Select Indicator</h3>
@@ -535,13 +710,18 @@
                 // 直接用文件打开 index.html 的情况，回退到本地统一后端
                 window.API_BASE = 'http://127.0.0.1:6001/vis-api/api';
             } else {
-                window.API_BASE = '/vis-api/api';
+                const marker = '/osri-vis';
+                const markerIndex = loc.pathname.indexOf(marker);
+                const mountPrefix = markerIndex > 0
+                    ? loc.pathname.slice(0, markerIndex).replace(/\/+$/, '')
+                    : '';
+                window.API_BASE = `${mountPrefix}/vis-api/api`;
             }
         })();
         const API_BASE = window.API_BASE;
         
         function normalizeDataSource(value) {
-            return value === 'aggregation' ? 'aggregation' : 'global';
+            return ['global', 'global_plus', 'aggregation'].includes(value) ? value : 'global';
         }
 
         function readInitialDataSource() {
@@ -557,7 +737,7 @@
             }
         }
 
-        // 数据源状态（global 或 aggregation）
+        // 数据源状态（global、global_plus 或 aggregation）
         let currentDataSource = readInitialDataSource();
         
         let nameMapping = {};
@@ -572,6 +752,42 @@
         let compareLineChart = null;
         let currentChartType = 'dynamic-bar-chart'; // 当前选中的图表类型
         let compareSelectedCountries = []; // 对比折线图选中的国家列表
+        let dataHelpTooltip = null;
+
+        function getDataHelpTooltip() {
+            if (!dataHelpTooltip) {
+                dataHelpTooltip = document.createElement('div');
+                dataHelpTooltip.className = 'data-help-tooltip';
+                document.body.appendChild(dataHelpTooltip);
+            }
+            return dataHelpTooltip;
+        }
+
+        function positionDataHelpTooltip(event) {
+            const tooltip = getDataHelpTooltip();
+            const padding = 12;
+            const x = Math.min(event.clientX + padding, window.innerWidth - tooltip.offsetWidth - padding);
+            const y = Math.min(event.clientY + padding, window.innerHeight - tooltip.offsetHeight - padding);
+            tooltip.style.left = `${Math.max(padding, x)}px`;
+            tooltip.style.top = `${Math.max(padding, y)}px`;
+        }
+
+        function showDataHelpTooltip(event) {
+            const text = event.currentTarget.getAttribute('data-tooltip');
+            if (!text) {
+                return;
+            }
+            const tooltip = getDataHelpTooltip();
+            tooltip.textContent = text;
+            tooltip.classList.add('show');
+            positionDataHelpTooltip(event);
+        }
+
+        function hideDataHelpTooltip() {
+            if (dataHelpTooltip) {
+                dataHelpTooltip.classList.remove('show');
+            }
+        }
         
         function applyDataSourceRestrictions() {
             const tierNavItem = document.querySelector('.nav-item[data-chart="tier-bar-chart"]');
@@ -627,7 +843,7 @@
                 await loadChartForType(currentChartType, selectedFilename);
             }
         }
-        
+
         // 获取API URL，自动添加数据源参数
         function getApiUrl(endpoint, params = {}) {
             // 处理相对路径
@@ -668,13 +884,16 @@
 
         window.addEventListener('message', function(event) {
             const payload = event && event.data;
-            if (!payload || payload.type !== 'osri-version-mode-changed') {
+            if (!payload) {
                 return;
             }
 
-            syncDataSourceFromExternal(payload.mode).catch(error => {
-                console.error('Failed to sync data source from parent message:', error);
-            });
+            if (payload.type === 'osri-version-mode-changed') {
+                syncDataSourceFromExternal(payload.mode).catch(error => {
+                    console.error('Failed to sync data source from parent message:', error);
+                });
+            }
+
         });
         
         // 初始化
@@ -935,9 +1154,21 @@
                 if (selectedFilename === file.filename) {
                     item.classList.add('selected');
                 }
+                const helpIcon = file.filename === 'R_zero_fill.json'
+                    ? '<span class="data-help-icon" data-tooltip="缺失补零口径：只要 R_oa_bar、R_od_bar、R_op_bar 三项里至少一个有值，就计算；缺失维度按 0。">?</span>'
+                    : '';
                 item.innerHTML = `
-                    <div class="data-item-name">${file.name}</div>
+                    <div class="data-item-name"><span>${file.name}</span>${helpIcon}</div>
                 `;
+                const dataHelpIcon = item.querySelector('.data-help-icon');
+                if (dataHelpIcon) {
+                    dataHelpIcon.addEventListener('mouseenter', showDataHelpTooltip);
+                    dataHelpIcon.addEventListener('mousemove', positionDataHelpTooltip);
+                    dataHelpIcon.addEventListener('mouseleave', hideDataHelpTooltip);
+                    dataHelpIcon.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                }
                 item.addEventListener('click', function(e) {
                     e.stopPropagation();
                     console.log('选择数据:', file.name, file.filename);
@@ -1335,6 +1566,8 @@
                     let defaultCountries;
                     if (currentDataSource === 'aggregation') {
                         defaultCountries = ['STLCs', 'EU27', 'China', 'Germany', 'India', 'Japan', 'Russia', 'United Kingdom', 'United States'];
+                    } else if (currentDataSource === 'global_plus') {
+                        defaultCountries = ['EU27', 'STLCs', 'United States', 'China', 'United Kingdom', 'Germany', 'France', 'Australia', 'Canada', 'Spain'];
                     } else {
                         defaultCountries = ['United States', 'China', 'United Kingdom', 'Germany', 'France', 'Australia', 'Canada', 'Spain'];
                     }
@@ -1763,11 +1996,18 @@
             'Africa': 'Africa',
             'North America': 'North America',
             'South America': 'South America',
-            'Oceania': 'Oceania'
+            'Oceania': 'Oceania',
+            'Groups': 'Groups'
         };
         
         // 大洲展开状态
-        const expandedContinents = new Set(['Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania']);
+        const defaultContinentOrder = ['Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania'];
+        const extraContinentOrder = Object.keys(continentData).filter(continent => !defaultContinentOrder.includes(continent));
+        const continentOrder = [
+            ...defaultContinentOrder.filter(continent => Array.isArray(continentData[continent])),
+            ...extraContinentOrder
+        ];
+        const expandedContinents = new Set(continentOrder);
         
         // 渲染国家列表（按大洲分组）
         function renderCountryList(filterText = '') {
@@ -1796,8 +2036,6 @@
             }
             
             // 无关键词时，按大洲分组显示
-            const continentOrder = ['Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania'];
-            
             continentOrder.forEach(continent => {
                 const countries = continentData[continent] || [];
                 if (countries.length === 0) return;

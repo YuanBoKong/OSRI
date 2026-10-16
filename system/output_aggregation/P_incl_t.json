@@ -1,0 +1,123 @@
+{
+  "2014": {
+    "STLCs": 16117.0,
+    "EU27": 320523.0,
+    "China": 69275.0,
+    "Germany": 61689.0,
+    "India": 16590.0,
+    "Japan": 25746.0,
+    "Russia": 12004.0,
+    "United Kingdom": 71424.0,
+    "United States": 160920.0
+  },
+  "2015": {
+    "STLCs": 17771.0,
+    "EU27": 343075.0,
+    "China": 79664.0,
+    "Germany": 65557.0,
+    "India": 17973.0,
+    "Japan": 26962.0,
+    "Russia": 13867.0,
+    "United Kingdom": 77962.0,
+    "United States": 172047.0
+  },
+  "2016": {
+    "STLCs": 19827.0,
+    "EU27": 364117.0,
+    "China": 89526.0,
+    "Germany": 68400.0,
+    "India": 19714.0,
+    "Japan": 28648.0,
+    "Russia": 15018.0,
+    "United Kingdom": 82827.0,
+    "United States": 180986.0
+  },
+  "2017": {
+    "STLCs": 22977.0,
+    "EU27": 381873.0,
+    "China": 101001.0,
+    "Germany": 71655.0,
+    "India": 21338.0,
+    "Japan": 29801.0,
+    "Russia": 16667.0,
+    "United Kingdom": 88265.0,
+    "United States": 190255.0
+  },
+  "2018": {
+    "STLCs": 25376.0,
+    "EU27": 407769.0,
+    "China": 118113.0,
+    "Germany": 75234.0,
+    "India": 24132.0,
+    "Japan": 31715.0,
+    "Russia": 18199.0,
+    "United Kingdom": 95218.0,
+    "United States": 201764.0
+  },
+  "2019": {
+    "STLCs": 29395.0,
+    "EU27": 428263.0,
+    "China": 136596.0,
+    "Germany": 78134.0,
+    "India": 27678.0,
+    "Japan": 33271.0,
+    "Russia": 20371.0,
+    "United Kingdom": 100462.0,
+    "United States": 209651.0
+  },
+  "2020": {
+    "STLCs": 36321.0,
+    "EU27": 480680.0,
+    "China": 154241.0,
+    "Germany": 85193.0,
+    "India": 33862.0,
+    "Japan": 37566.0,
+    "Russia": 23073.0,
+    "United Kingdom": 112057.0,
+    "United States": 224541.0
+  },
+  "2021": {
+    "STLCs": 45474.0,
+    "EU27": 528055.0,
+    "China": 162312.0,
+    "Germany": 93272.0,
+    "India": 43606.0,
+    "Japan": 39021.0,
+    "Russia": 24710.0,
+    "United Kingdom": 124552.0,
+    "United States": 236034.0
+  },
+  "2022": {
+    "STLCs": 50533.0,
+    "EU27": 512210.0,
+    "China": 174107.0,
+    "Germany": 89491.0,
+    "India": 52266.0,
+    "Japan": 36972.0,
+    "Russia": 22121.0,
+    "United Kingdom": 121225.0,
+    "United States": 226658.0
+  },
+  "2023": {
+    "STLCs": 48525.0,
+    "EU27": 504826.0,
+    "China": 167440.0,
+    "Germany": 86634.0,
+    "India": 53772.0,
+    "Japan": 35317.0,
+    "Russia": 18204.0,
+    "United Kingdom": 117960.0,
+    "United States": 214935.0
+  },
+  "2024": {
+    "STLCs": 53047.0,
+    "EU27": 528358.0,
+    "China": 185687.0,
+    "Germany": 89615.0,
+    "India": 60952.0,
+    "Japan": 37206.0,
+    "Russia": 16784.0,
+    "United Kingdom": 123314.0,
+    "United States": 222444.0
+  }
+}

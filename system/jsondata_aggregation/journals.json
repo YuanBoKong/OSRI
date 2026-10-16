@@ -1,0 +1,123 @@
+{
+  "2014": {
+    "STLCs": 11,
+    "EU27": 2596,
+    "China": 182,
+    "Germany": 683,
+    "India": 107,
+    "Japan": 244,
+    "Russia": 150,
+    "United Kingdom": 2580,
+    "United States": 3978
+  },
+  "2015": {
+    "STLCs": 10,
+    "EU27": 2653,
+    "China": 193,
+    "Germany": 701,
+    "India": 109,
+    "Japan": 243,
+    "Russia": 149,
+    "United Kingdom": 2660,
+    "United States": 4023
+  },
+  "2016": {
+    "STLCs": 11,
+    "EU27": 2663,
+    "China": 186,
+    "Germany": 707,
+    "India": 103,
+    "Japan": 246,
+    "Russia": 152,
+    "United Kingdom": 2690,
+    "United States": 4062
+  },
+  "2017": {
+    "STLCs": 11,
+    "EU27": 2695,
+    "China": 205,
+    "Germany": 718,
+    "India": 103,
+    "Japan": 247,
+    "Russia": 153,
+    "United Kingdom": 2774,
+    "United States": 4091
+  },
+  "2018": {
+    "STLCs": 11,
+    "EU27": 2714,
+    "China": 223,
+    "Germany": 722,
+    "India": 102,
+    "Japan": 248,
+    "Russia": 151,
+    "United Kingdom": 2864,
+    "United States": 4142
+  },
+  "2019": {
+    "STLCs": 11,
+    "EU27": 2773,
+    "China": 252,
+    "Germany": 753,
+    "India": 103,
+    "Japan": 247,
+    "Russia": 150,
+    "United Kingdom": 2975,
+    "United States": 4187
+  },
+  "2020": {
+    "STLCs": 35,
+    "EU27": 5291,
+    "China": 355,
+    "Germany": 1116,
+    "India": 315,
+    "Japan": 335,
+    "Russia": 384,
+    "United Kingdom": 4493,
+    "United States": 5850
+  },
+  "2021": {
+    "STLCs": 35,
+    "EU27": 5382,
+    "China": 406,
+    "Germany": 1150,
+    "India": 332,
+    "Japan": 350,
+    "Russia": 390,
+    "United Kingdom": 4589,
+    "United States": 5951
+  },
+  "2022": {
+    "STLCs": 38,
+    "EU27": 5461,
+    "China": 449,
+    "Germany": 1151,
+    "India": 330,
+    "Japan": 353,
+    "Russia": 388,
+    "United Kingdom": 4630,
+    "United States": 5953
+  },
+  "2023": {
+    "STLCs": 37,
+    "EU27": 5488,
+    "China": 517,
+    "Germany": 1156,
+    "India": 322,
+    "Japan": 354,
+    "Russia": 381,
+    "United Kingdom": 4704,
+    "United States": 5954
+  },
+  "2024": {
+    "STLCs": 37,
+    "EU27": 5551,
+    "China": 589,
+    "Germany": 1162,
+    "India": 316,
+    "Japan": 364,
+    "Russia": 381,
+    "United Kingdom": 4776,
+    "United States": 6026
+  }
+}

@@ -3,10 +3,9 @@ import { ElMessage } from 'element-plus'
 
 // 根据环境自动判断API地址
 const getApiBaseURL = () => {
-  // 开发环境和生产环境都使用相对路径，通过代理转发
-  // 开发环境：Vite 代理到 http://localhost:6001
-  // 生产环境：Nginx 代理到 http://localhost:6001
-  return '/api'
+  const base = import.meta.env.BASE_URL || '/'
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base
+  return `${normalizedBase}/api`
 }
 
 const service = axios.create({
@@ -49,4 +48,3 @@ service.interceptors.response.use(
 )
 
 export default service
-

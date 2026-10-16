@@ -9,10 +9,12 @@ BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 VIS_DATA_DIR = PROJECT_ROOT / "vis" / "data"
 VIS_DATA_AGGREGATION_DIR = PROJECT_ROOT / "vis" / "data_aggregation"
+VIS_DATA_GLOBAL_PLUS_DIR = PROJECT_ROOT / "vis" / "data_global_plus"
 
 VIS_SYNC_FILES = frozenset({
     "OA.json",
     "R.json",
+    "R_zero_fill.json",
     "R_oa_bar.json",
     "R_od_bar.json",
     "R_op_bar.json",
@@ -27,6 +29,8 @@ SOURCE_TO_TARGET_DIR: Dict[str, Path] = {
     "output": VIS_DATA_DIR,
     "jsondata_aggregation": VIS_DATA_AGGREGATION_DIR,
     "output_aggregation": VIS_DATA_AGGREGATION_DIR,
+    "jsondata_global_plus": VIS_DATA_GLOBAL_PLUS_DIR,
+    "output_global_plus": VIS_DATA_GLOBAL_PLUS_DIR,
 }
 
 MODE_SOURCE_DIRS: Dict[str, List[Path]] = {
@@ -37,6 +41,10 @@ MODE_SOURCE_DIRS: Dict[str, List[Path]] = {
     "aggregation": [
         BASE_DIR / "jsondata_aggregation",
         BASE_DIR / "output_aggregation",
+    ],
+    "global_plus": [
+        BASE_DIR / "jsondata_global_plus",
+        BASE_DIR / "output_global_plus",
     ],
 }
 

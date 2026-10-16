@@ -19,3 +19,15 @@ vis/data_aggregation/*
 **/*.log
 **/*.lock
 **/*.bak
+
+system/HDI.json
+system/jsondata_global_plus
+system/output_global_plus
+data/reference
+vis/data_global_plus/*
+!vis/data_global_plus/name.json
+!vis/data_global_plus/continent.json
+**/__pycache__
+**/*.py[cod]
+.env
+.env.*

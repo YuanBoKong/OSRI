@@ -33,9 +33,12 @@ RUN chmod +x /entrypoint.sh \
       /app/system/output \
       /app/system/jsondata_aggregation \
       /app/system/output_aggregation \
+      /app/system/jsondata_global_plus \
+      /app/system/output_global_plus \
       /app/system/.runtime \
       /app/vis/data \
-      /app/vis/data_aggregation
+      /app/vis/data_aggregation \
+      /app/vis/data_global_plus
 
 WORKDIR /app/system
 

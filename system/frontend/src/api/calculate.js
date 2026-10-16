@@ -2,7 +2,12 @@ import request from './request'
 
 // 执行批量计算（根据版本模式自动选择）
 export function executeBatchCalculate(versionMode = 'global') {
-  const basePath = versionMode === 'aggregation' ? '/calculate_aggregation' : '/calculate'
+  const basePaths = {
+    global: '/calculate',
+    global_plus: '/calculate_global_plus',
+    aggregation: '/calculate_aggregation'
+  }
+  const basePath = basePaths[versionMode] || basePaths.global
   return request({
     url: `${basePath}/batch`,
     method: 'post'
@@ -19,10 +24,14 @@ export function executeBatchCalculateAggregation() {
 
 // 获取计算状态
 export function getCalculateStatus(versionMode = 'global') {
-  const basePath = versionMode === 'aggregation' ? '/calculate_aggregation' : '/calculate'
+  const basePaths = {
+    global: '/calculate',
+    global_plus: '/calculate_global_plus',
+    aggregation: '/calculate_aggregation'
+  }
+  const basePath = basePaths[versionMode] || basePaths.global
   return request({
     url: `${basePath}/status`,
     method: 'get'
   })
 }
-

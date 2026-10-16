@@ -24,6 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 VIS_DIR = PROJECT_ROOT / "vis"
 FRONTEND_DIST_DIR = BASE_DIR / "frontend" / "dist"
+FRONTEND_STATIC_DIR = FRONTEND_DIST_DIR / "static"
+FRONTEND_INDEX = FRONTEND_DIST_DIR / "index.html"
 
 
 def _load_vis_subapp() -> FastAPI:
@@ -39,8 +41,21 @@ def _load_vis_subapp() -> FastAPI:
 # 导入计算模块
 from calculate import batch_calculate_and_save, reload_data_cache
 from calculate_aggregation import batch_calculate_and_save as batch_calculate_and_save_aggregation, reload_data_cache as reload_data_cache_aggregation
+from calculate_global_plus import batch_calculate_and_save as batch_calculate_and_save_global_plus, reload_data_cache as reload_data_cache_global_plus
+from generate_global_plus import build_global_plus_jsondata
 
-app = FastAPI(title="PDQ统一后端API", version="1.1.0")
+app = FastAPI(title="OSRI API", version="1.1.0")
+
+@app.middleware("http")
+async def normalize_application_prefix(request, call_next):
+    if request.scope["path"] == "/OSRI":
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/OSRI/")
+    if request.scope["path"].startswith("/OSRI/"):
+        request.scope["path"] = request.scope["path"][5:]
+        request.scope["raw_path"] = request.scope["path"].encode("utf-8")
+    return await call_next(request)
+
 
 # 配置CORS，允许前端跨域访问
 app.add_middleware(
@@ -55,6 +70,8 @@ JSONDATA_DIR = BASE_DIR / "jsondata"
 OUTPUT_DIR = BASE_DIR / "output"
 JSONDATA_AGGREGATION_DIR = BASE_DIR / "jsondata_aggregation"
 OUTPUT_AGGREGATION_DIR = BASE_DIR / "output_aggregation"
+JSONDATA_GLOBAL_PLUS_DIR = BASE_DIR / "jsondata_global_plus"
+OUTPUT_GLOBAL_PLUS_DIR = BASE_DIR / "output_global_plus"
 RUNTIME_DIR = BASE_DIR / ".runtime"
 
 # 确保目录存在
@@ -62,18 +79,29 @@ JSONDATA_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 JSONDATA_AGGREGATION_DIR.mkdir(exist_ok=True)
 OUTPUT_AGGREGATION_DIR.mkdir(exist_ok=True)
+JSONDATA_GLOBAL_PLUS_DIR.mkdir(exist_ok=True)
+OUTPUT_GLOBAL_PLUS_DIR.mkdir(exist_ok=True)
 RUNTIME_DIR.mkdir(exist_ok=True)
 
 VIS_DIR.mkdir(exist_ok=True)
 
 CALCULATION_STATUS_FILES = {
     "global": RUNTIME_DIR / "calculate_global_status.json",
+    "global_plus": RUNTIME_DIR / "calculate_global_plus_status.json",
     "aggregation": RUNTIME_DIR / "calculate_aggregation_status.json",
+}
+
+MODE_LABELS = {
+    "global": "全球版本",
+    "global_plus": "全球Plus版本",
+    "aggregation": "聚合版本",
 }
 
 vis_subapp = _load_vis_subapp()
 app.mount("/vis-api", vis_subapp)
 app.mount("/osri-vis", StaticFiles(directory=str(VIS_DIR), html=True), name="osri-vis")
+if FRONTEND_STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_STATIC_DIR)), name="frontend-static")
 
 
 # ==================== 数据模型 ====================
@@ -276,12 +304,20 @@ def format_dataframe_for_excel_export(df: pd.DataFrame) -> pd.DataFrame:
     return df.apply(lambda col: col.map(_round_value_for_excel_export))
 
 
+def _excel_primary_key_name(filename: str) -> str:
+    return "国家/地区/组织" if filename.endswith("_stats_by_country.json") else "年份"
+
+
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _mode_label(mode: str) -> str:
+    return MODE_LABELS.get(mode, mode)
+
+
 def _default_calculation_status(mode: str) -> Dict[str, Any]:
-    label = "聚合版本" if mode == "aggregation" else "全球版本"
+    label = _mode_label(mode)
     return {
         "mode": mode,
         "status": "idle",
@@ -336,7 +372,7 @@ def _write_calculation_status(mode: str, **updates) -> Dict[str, Any]:
 
 def _queue_calculation(mode: str):
     status_file = _get_calculation_status_file(mode)
-    label = "聚合版本" if mode == "aggregation" else "全球版本"
+    label = _mode_label(mode)
 
     with file_lock(status_file):
         status = _default_calculation_status(mode)
@@ -365,7 +401,7 @@ def _queue_calculation(mode: str):
 
 
 def _run_batch_calculation_pipeline(mode: str):
-    label = "聚合版本" if mode == "aggregation" else "全球版本"
+    label = _mode_label(mode)
     current_status = _read_calculation_status(mode)
     started_at = current_status.get("started_at") or _utc_now_iso()
     _write_calculation_status(
@@ -381,6 +417,10 @@ def _run_batch_calculation_pipeline(mode: str):
     try:
         if mode == "aggregation":
             batch_calculate_and_save_aggregation()
+        elif mode == "global_plus":
+            build_global_plus_jsondata()
+            reload_data_cache_global_plus()
+            batch_calculate_and_save_global_plus()
         else:
             batch_calculate_and_save()
 
@@ -428,6 +468,11 @@ def _reload_input_cache_after_write(file_path: Path):
             reload_data_cache_aggregation()
         except Exception as e:
             print(f"警告: 重新加载聚合版本数据缓存失败: {e}")
+    elif directory_name == "jsondata_global_plus":
+        try:
+            reload_data_cache_global_plus()
+        except Exception as e:
+            print(f"警告: 重新加载全球Plus版本数据缓存失败: {e}")
 
 
 def _sync_visualization_after_write(file_path: Path) -> bool:
@@ -440,6 +485,180 @@ def _sync_visualization_after_write(file_path: Path) -> bool:
 def _post_write_refresh(file_path: Path) -> bool:
     _reload_input_cache_after_write(file_path)
     return _sync_visualization_after_write(file_path)
+
+
+def _ensure_json_filename(filename: str):
+    if not filename.endswith('.json'):
+        raise HTTPException(status_code=400, detail="文件名必须以.json结尾")
+
+
+def _list_directory_json_files(directory: Path):
+    files = []
+    for file_path in directory.glob("*.json"):
+        files.append({
+            "filename": file_path.name,
+            "size": file_path.stat().st_size,
+            "modified": file_path.stat().st_mtime
+        })
+    return {"files": sorted(files, key=lambda x: x["filename"])}
+
+
+def _get_directory_json_file(directory: Path, filename: str):
+    _ensure_json_filename(filename)
+    data, revision = read_json_file_with_revision(directory / filename)
+    return {"filename": filename, "data": data, "revision": revision}
+
+
+def _filter_directory_json_file(directory: Path, filename: str, request: FilterRequest):
+    _ensure_json_filename(filename)
+    data = read_json_file(directory / filename)
+    filtered_data = filter_data(data, request.years, request.countries)
+    return {
+        "filename": filename,
+        "data": filtered_data,
+        "filter": {
+            "years": request.years,
+            "countries": request.countries
+        }
+    }
+
+
+def _update_directory_json_file(directory: Path, filename: str, request: FileUpdateRequest):
+    _ensure_json_filename(filename)
+    if not isinstance(request.data, dict):
+        raise HTTPException(status_code=400, detail="数据必须是JSON对象")
+
+    file_path = directory / filename
+    revision = write_json_file(file_path, request.data, request.expected_revision)
+    vis_updated = _post_write_refresh(file_path)
+
+    return {
+        "message": f"文件 {filename} 已更新",
+        "filename": filename,
+        "revision": revision,
+        "vis_updated": vis_updated,
+    }
+
+
+def _add_directory_data(directory: Path, filename: str, request: AddDataRequest, *, reject_single_value: bool = False):
+    _ensure_json_filename(filename)
+    file_path = directory / filename
+    data = read_json_file(file_path)
+
+    if reject_single_value and "value" in data and len(data) == 1:
+        raise HTTPException(status_code=400, detail="单值函数不支持添加数据")
+
+    if request.year:
+        if request.year in data:
+            raise HTTPException(status_code=400, detail=f"年份 {request.year} 已存在")
+        data[request.year] = request.value
+    elif request.country:
+        if not data:
+            raise HTTPException(status_code=400, detail="文件为空，无法添加国家")
+
+        exists = any(request.country in year_data for year_data in data.values() if isinstance(year_data, dict))
+        if exists:
+            raise HTTPException(status_code=400, detail=f"国家 {request.country} 已存在")
+
+        for year_key in data.keys():
+            if isinstance(data[year_key], dict):
+                data[year_key][request.country] = request.value
+    else:
+        raise HTTPException(status_code=400, detail="必须提供year或country参数")
+
+    revision = write_json_file(file_path, data, request.expected_revision)
+    vis_updated = _post_write_refresh(file_path)
+    return {"message": "数据已添加", "filename": filename, "revision": revision, "vis_updated": vis_updated}
+
+
+def _delete_directory_data(directory: Path, filename: str, request: DeleteDataRequest, *, reject_single_value: bool = False):
+    _ensure_json_filename(filename)
+    file_path = directory / filename
+    data = read_json_file(file_path)
+
+    if reject_single_value and "value" in data and len(data) == 1:
+        raise HTTPException(status_code=400, detail="单值函数不支持删除数据")
+
+    deleted = False
+
+    if request.year:
+        if request.year in data:
+            del data[request.year]
+            deleted = True
+        else:
+            raise HTTPException(status_code=404, detail=f"年份 {request.year} 不存在")
+    elif request.country:
+        for year_key in data.keys():
+            if isinstance(data[year_key], dict) and request.country in data[year_key]:
+                del data[year_key][request.country]
+                deleted = True
+
+        if not deleted:
+            raise HTTPException(status_code=404, detail=f"国家 {request.country} 不存在")
+    else:
+        raise HTTPException(status_code=400, detail="必须提供year或country参数")
+
+    revision = write_json_file(file_path, data, request.expected_revision)
+    vis_updated = _post_write_refresh(file_path)
+    return {"message": "数据已删除", "filename": filename, "revision": revision, "vis_updated": vis_updated}
+
+
+def _export_directory_json_to_excel(directory: Path, filename: str):
+    try:
+        _ensure_json_filename(filename)
+        file_path = directory / filename
+
+        try:
+            data = read_json_file(file_path)
+        except HTTPException as e:
+            if e.status_code == 404:
+                raise HTTPException(status_code=404, detail=f"文件不存在: {filename}")
+            raise
+
+        if not data or len(data) == 0:
+            raise HTTPException(status_code=400, detail="文件数据为空")
+
+        if 'value' in data and len(data) == 1:
+            df = pd.DataFrame([{'函数名': filename.replace('.json', ''), '值': data['value']}])
+        else:
+            years = sorted(data.keys())
+            all_countries = set()
+            for year_data in data.values():
+                if isinstance(year_data, dict):
+                    all_countries.update(year_data.keys())
+
+            all_countries = sorted(list(all_countries))
+            rows = []
+            for year in years:
+                row = {_excel_primary_key_name(filename): year}
+                if isinstance(data[year], dict):
+                    for country in all_countries:
+                        row[country] = data[year].get(country, None)
+                rows.append(row)
+
+            df = pd.DataFrame(rows)
+
+        export_df = format_dataframe_for_excel_export(df)
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            export_df.to_excel(writer, index=False, sheet_name='数据')
+
+        output.seek(0)
+
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename.replace('.json', '')}.xlsx"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"导出Excel错误: {error_detail}")
+        raise HTTPException(status_code=500, detail=f"导出Excel失败: {str(e)}")
 
 
 # ==================== jsondata API ====================
@@ -1073,6 +1292,30 @@ async def get_calculate_aggregation_status():
     return _read_calculation_status("aggregation")
 
 
+# ==================== 全球Plus版本计算API ====================
+@app.post("/api/calculate_global_plus/batch", response_model=CalculateResponse)
+async def execute_batch_calculate_global_plus(background_tasks: BackgroundTasks):
+    """执行全球Plus版本的批量计算"""
+    try:
+        _queue_calculation("global_plus")
+        background_tasks.add_task(_run_batch_calculation_pipeline, "global_plus")
+
+        return CalculateResponse(
+            status="started",
+            message="全球Plus版本批量计算已开始，完成后将自动同步可视化数据"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"启动全球Plus版本计算失败: {str(e)}")
+
+
+@app.get("/api/calculate_global_plus/status")
+async def get_calculate_global_plus_status():
+    """获取全球Plus版本计算状态"""
+    return _read_calculation_status("global_plus")
+
+
 # ==================== 导出Excel功能 ====================
 @app.get("/api/jsondata/{filename}/export-excel")
 async def export_jsondata_to_excel(filename: str):
@@ -1113,7 +1356,7 @@ async def export_jsondata_to_excel(filename: str):
             # 构建DataFrame
             rows = []
             for year in years:
-                row = {'年份': year}
+                row = {_excel_primary_key_name(filename): year}
                 if isinstance(data[year], dict):
                     for country in all_countries:
                         row[country] = data[year].get(country, None)
@@ -1184,7 +1427,7 @@ async def export_output_to_excel(filename: str):
             
             rows = []
             for year in years:
-                row = {'年份': year}
+                row = {_excel_primary_key_name(filename): year}
                 if isinstance(data[year], dict):
                     for country in all_countries:
                         row[country] = data[year].get(country, None)
@@ -1640,7 +1883,7 @@ async def export_jsondata_aggregation_to_excel(filename: str):
             
             rows = []
             for year in years:
-                row = {'年份': year}
+                row = {_excel_primary_key_name(filename): year}
                 if isinstance(data[year], dict):
                     for country in all_countries:
                         row[country] = data[year].get(country, None)
@@ -1854,7 +2097,7 @@ async def export_output_aggregation_to_excel(filename: str):
             
             rows = []
             for year in years:
-                row = {'年份': year}
+                row = {_excel_primary_key_name(filename): year}
                 if isinstance(data[year], dict):
                     for country in all_countries:
                         row[country] = data[year].get(country, None)
@@ -1886,10 +2129,125 @@ async def export_output_aggregation_to_excel(filename: str):
         raise HTTPException(status_code=500, detail=f"导出Excel失败: {str(e)}")
 
 
-# The production image builds the Vue application into this directory.  Mounting
-# it here keeps the management interface, API, and visualization on one origin.
-if FRONTEND_DIST_DIR.exists():
-    app.mount("/OSRI", StaticFiles(directory=str(FRONTEND_DIST_DIR), html=True), name="osri-frontend")
+# ==================== jsondata_global_plus API ====================
+@app.get("/api/jsondata_global_plus/files")
+async def list_jsondata_global_plus_files():
+    """列出jsondata_global_plus文件夹中的所有JSON文件"""
+    return _list_directory_json_files(JSONDATA_GLOBAL_PLUS_DIR)
+
+
+@app.get("/api/jsondata_global_plus/{filename}")
+async def get_jsondata_global_plus_file(filename: str):
+    """读取jsondata_global_plus文件夹中的JSON文件"""
+    return _get_directory_json_file(JSONDATA_GLOBAL_PLUS_DIR, filename)
+
+
+@app.post("/api/jsondata_global_plus/{filename}/filter")
+async def filter_jsondata_global_plus_file(filename: str, request: FilterRequest):
+    """筛选jsondata_global_plus文件夹中的JSON文件数据"""
+    return _filter_directory_json_file(JSONDATA_GLOBAL_PLUS_DIR, filename, request)
+
+
+@app.put("/api/jsondata_global_plus/{filename}")
+async def update_jsondata_global_plus_file(filename: str, request: FileUpdateRequest):
+    """更新jsondata_global_plus文件夹中的JSON文件（完全覆盖）"""
+    return _update_directory_json_file(JSONDATA_GLOBAL_PLUS_DIR, filename, request)
+
+
+@app.post("/api/jsondata_global_plus/{filename}/add")
+async def add_jsondata_global_plus_data(filename: str, request: AddDataRequest):
+    """向jsondata_global_plus文件中添加数据（添加年份或国家）"""
+    return _add_directory_data(JSONDATA_GLOBAL_PLUS_DIR, filename, request)
+
+
+@app.delete("/api/jsondata_global_plus/{filename}/delete")
+async def delete_jsondata_global_plus_data(filename: str, request: DeleteDataRequest):
+    """从jsondata_global_plus文件中删除数据（删除年份或国家）"""
+    return _delete_directory_data(JSONDATA_GLOBAL_PLUS_DIR, filename, request)
+
+
+@app.post("/api/jsondata_global_plus/{filename}/import-excel", response_model=ExcelImportResponse)
+async def import_excel_global_plus_data(filename: str, file: UploadFile = File(...)):
+    """全球Plus由全球版和聚合版自动合成，不支持直接导入Excel。"""
+    raise HTTPException(status_code=400, detail="全球Plus由全球版和聚合版自动合成，请分别维护源数据后重新计算全球Plus")
+
+
+@app.get("/api/jsondata_global_plus/{filename}/export-excel")
+async def export_jsondata_global_plus_to_excel(filename: str):
+    """导出单个jsondata_global_plus文件为Excel"""
+    return _export_directory_json_to_excel(JSONDATA_GLOBAL_PLUS_DIR, filename)
+
+
+# ==================== output_global_plus API ====================
+@app.get("/api/output_global_plus/files")
+async def list_output_global_plus_files():
+    """列出output_global_plus文件夹中的所有JSON文件"""
+    return _list_directory_json_files(OUTPUT_GLOBAL_PLUS_DIR)
+
+
+@app.get("/api/output_global_plus/{filename}")
+async def get_output_global_plus_file(filename: str):
+    """读取output_global_plus文件夹中的JSON文件"""
+    return _get_directory_json_file(OUTPUT_GLOBAL_PLUS_DIR, filename)
+
+
+@app.post("/api/output_global_plus/{filename}/filter")
+async def filter_output_global_plus_file(filename: str, request: FilterRequest):
+    """筛选output_global_plus文件夹中的JSON文件数据"""
+    return _filter_directory_json_file(OUTPUT_GLOBAL_PLUS_DIR, filename, request)
+
+
+@app.put("/api/output_global_plus/{filename}")
+async def update_output_global_plus_file(filename: str, request: FileUpdateRequest):
+    """更新output_global_plus文件夹中的JSON文件（完全覆盖）"""
+    return _update_directory_json_file(OUTPUT_GLOBAL_PLUS_DIR, filename, request)
+
+
+@app.post("/api/output_global_plus/{filename}/add")
+async def add_output_global_plus_data(filename: str, request: AddDataRequest):
+    """向output_global_plus文件中添加数据（添加年份或国家）"""
+    return _add_directory_data(OUTPUT_GLOBAL_PLUS_DIR, filename, request, reject_single_value=True)
+
+
+@app.delete("/api/output_global_plus/{filename}/delete")
+async def delete_output_global_plus_data(filename: str, request: DeleteDataRequest):
+    """从output_global_plus文件中删除数据（删除年份或国家）"""
+    return _delete_directory_data(OUTPUT_GLOBAL_PLUS_DIR, filename, request, reject_single_value=True)
+
+
+@app.get("/api/output_global_plus/{filename}/export-excel")
+async def export_output_global_plus_to_excel(filename: str):
+    """导出单个output_global_plus文件为Excel"""
+    return _export_directory_json_to_excel(OUTPUT_GLOBAL_PLUS_DIR, filename)
+
+
+SPA_ROUTE_PREFIXES = ("jsondata", "output", "datavis")
+RESERVED_ROUTE_PREFIXES = ("api", "vis-api", "osri-vis", "static")
+
+
+def _serve_frontend_index():
+    if FRONTEND_INDEX.exists():
+        return FileResponse(FRONTEND_INDEX)
+    raise HTTPException(status_code=404, detail="前端构建产物不存在，请先执行 Vite build")
+
+
+@app.get("/", include_in_schema=False)
+async def serve_frontend_root():
+    return _serve_frontend_index()
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_frontend_spa(full_path: str):
+    normalized_path = full_path.strip("/")
+    first_segment = normalized_path.split("/", 1)[0] if normalized_path else ""
+
+    if first_segment in RESERVED_ROUTE_PREFIXES:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    if normalized_path == "index.html" or first_segment in SPA_ROUTE_PREFIXES:
+        return _serve_frontend_index()
+
+    raise HTTPException(status_code=404, detail="Not Found")
 
 
 if __name__ == "__main__":

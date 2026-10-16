@@ -2,7 +2,12 @@ import request from './request'
 
 // 根据版本模式获取基础路径
 const getBasePath = (versionMode = 'global') => {
-  return versionMode === 'aggregation' ? '/jsondata_aggregation' : '/jsondata'
+  const basePaths = {
+    global: '/jsondata',
+    global_plus: '/jsondata_global_plus',
+    aggregation: '/jsondata_aggregation'
+  }
+  return basePaths[versionMode] || basePaths.global
 }
 
 // 列出所有jsondata文件
@@ -99,4 +104,3 @@ export function filterJsonDataFile(filename, years, countries, versionMode = 'gl
     }
   })
 }
-

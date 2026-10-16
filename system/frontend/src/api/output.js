@@ -2,7 +2,12 @@ import request from './request'
 
 // 根据版本模式获取基础路径
 const getBasePath = (versionMode = 'global') => {
-  return versionMode === 'aggregation' ? '/output_aggregation' : '/output'
+  const basePaths = {
+    global: '/output',
+    global_plus: '/output_global_plus',
+    aggregation: '/output_aggregation'
+  }
+  return basePaths[versionMode] || basePaths.global
 }
 
 // 列出所有output文件
@@ -87,4 +92,3 @@ export function filterOutputFile(filename, years, countries, versionMode = 'glob
     }
   })
 }
-

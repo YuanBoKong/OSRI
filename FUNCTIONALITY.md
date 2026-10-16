@@ -1,25 +1,25 @@
-# System Functionality
+# 系统功能说明
 
-## Data management
+系统从开放获取、开放数据、开放政策三个维度计算开放科学成熟度（OSRI），支持数据管理、结果查看与可视化分析。
 
-The backend provides interfaces for reading, editing, importing, exporting, and validating country-year input data and calculation outputs. Input files are organized by indicator and stored in JSON format.
+## 指标计算
 
-## OSRI calculation
+`system/calculate.py` 实现全球计算，`system/calculate_aggregation.py` 实现聚合计算。计算结果包含开放获取、开放数据、开放政策三个维度及开放科学成熟度总分。
 
-`system/calculate.py` implements the global country-year calculation pipeline. It calculates the open-access, open-data, and open-science-policy components, their intermediate indicators, normalized dimension outputs, and the composite score.
+`R.json` 仅在三个维度均有效时计算。`R_zero_fill.json` 在至少一个维度有效时，将其余缺失维度按零处理；三个维度全部缺失时，结果仍为缺失。两种总分均使用配置中的维度权重，补零时不重新分配权重。
 
-`system/calculate_aggregation.py` implements the aggregation calculation mode. The calculation modules save all intermediate and final outputs as JSON files.
+`generate_global_plus.py` 将 EU27、STLCs 的聚合输入加入全球国家数据，保留原有全球总量和权重。`calculate_global_plus.py` 使用全球计算引擎计算合并数据，归一化范围包含合并后的全部实体。
 
-## Data validation and storage
+`output_statistics.py` 为两种总分和三个归一化维度生成按年份、按国家或群组的统计量。方差和标准差使用总体分母。年度统计包含分位数，实体统计包含首末年值、变化量和变化率。首年或末年缺失时，不使用其他年份替代。
 
-`system/data_validation.py` validates the structure of calculation inputs and outputs. `system/file_storage.py` provides atomic JSON writing, file locking, and revision support for data-management operations.
+## 数据管理与可视化
 
-## Web interface
+前端支持三种模式切换、数据编辑、筛选、Excel 导出和计算结果查看。全球与聚合输入支持 Excel 导入。全球Plus每次重新计算时根据源数据重新生成输入，因此持续保留的数据修正应在全球或聚合模式中完成。
 
-The Vue frontend in `system/frontend/` provides pages for input-data management, calculation-output review, and access to the visualization application.
+JSON 写入包含结构校验、文件锁、原子替换和修订号检查。批量计算在后台执行，前端轮询计算状态。计算完成或通过接口修改数据后，系统同步可视化所需文件。
 
-The visualization application in `vis/` provides dynamic ranking charts, tiered readiness distributions, rank-change charts, line charts, continent summaries, and comparison charts.
+可视化包括动态排名、成熟度分区、排名变化、时间序列、对比折线和大洲或群组视图。全球Plus中的 EU27、STLCs 以独立群组类别展示。
 
-## Deployment utilities
+## 辅助工具
 
-Docker, Docker Compose, Nginx, file-synchronization, and data-conversion utilities are included for local and server deployment.
+`update_group_hdi.py` 根据人口权重表计算 EU27、STLCs 的加权 HDI。系统另保留数据转换与整理工具。可选的文件同步守护进程用于监听接口之外的文件修改，覆盖三种模式；常规接口操作已包含同步流程。

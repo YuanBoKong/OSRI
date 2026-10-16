@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from data_validation import validate_calculation_inputs, validate_file_payload
 from file_storage import atomic_write_json
+from output_statistics import calculate_output_statistics
 
 # 读取所有json文件存储到字典中
 BASE_DIR = Path(__file__).resolve().parent
@@ -35,6 +36,9 @@ json_files = {
 # 预加载所有JSON文件到内存
 _data_cache = {}
 
+# HDI 数据（按国家名索引，不是按年份）
+_hdi_data = None
+
 # 缓存计算结果
 _cache = {
     'constants': {},  # 单值函数的结果
@@ -59,9 +63,26 @@ def _to_number_or_none(value):
             return None
     return None
 
+def _adjust_with_hdi(raw_value, country, alpha=0.6):
+    """
+    使用加权平均法，将原始分数与 HDI 进行融合：
+        S_final = alpha * S_raw + (1 - alpha) * HDI
+    """
+    if not (0.0 <= alpha <= 1.0):
+        raise ValueError("alpha 必须在 [0, 1] 区间内")
+
+    if raw_value is None:
+        return None
+
+    hdi_value = _hdi_data.get(country) if _hdi_data else None
+    if hdi_value is None:
+        return raw_value
+
+    return alpha * float(raw_value) + (1.0 - alpha) * float(hdi_value)
+
 def reload_data_cache():
     """重新加载所有JSON文件到内存（当文件被修改后调用）"""
-    global _data_cache, _cache
+    global _data_cache, _cache, _hdi_data
     _data_cache = {}
     for key, path in json_files.items():
         try:
@@ -100,6 +121,18 @@ def reload_data_cache():
         except Exception as e:
             print(f"错误: 读取文件失败 {path}: {str(e)}")
             _data_cache[key] = {}
+
+    hdi_path = BASE_DIR / "HDI.json"
+    try:
+        if os.path.exists(hdi_path):
+            with open(hdi_path, 'r', encoding='utf-8') as f:
+                _hdi_data = json.load(f)
+        else:
+            print(f"警告: HDI文件不存在: {hdi_path}")
+            _hdi_data = {}
+    except Exception as e:
+        print(f"错误: 读取HDI文件失败 {hdi_path}: {str(e)}")
+        _hdi_data = {}
     
     # 清空计算结果缓存，因为数据已更新
     _cache = {
@@ -477,6 +510,8 @@ def R_oa_bar(year, country):
         result = None
     else:
         result = R_oa_current / max_of_max
+
+    result = _adjust_with_hdi(result, country, alpha=0.6)
     
     set_cache('R_oa_bar', result, year, country)
     return result
@@ -499,7 +534,7 @@ def f1(year, country):
         fwci_value = _to_number_or_none(data_fwci[year_str][country])
         # 对 FWCI 做广义对数变换，避免极端值拉高或过小
         if fwci_value is not None:
-            fwci_value = math.log10(100 * fwci_value + 1)
+            fwci_value = math.log10(10 * fwci_value + 1)
         
         if fwci_value is None:
             result = None
@@ -808,6 +843,8 @@ def R_od_bar(year, country):
         result = None
     else:
         result = R_od_current / max_of_max
+
+    result = _adjust_with_hdi(result, country, alpha=0.6)
     
     set_cache('R_od_bar', result, year, country)
     return result
@@ -1008,9 +1045,27 @@ def R_op_bar(year, country):
             result = None
         else:
             result = current / denom
+
+    result = _adjust_with_hdi(result, country, alpha=0.6)
     
     set_cache('R_op_bar', result, year, country)
     return result
+
+
+def _calculate_R_from_parts(data_weight, R_oa_bar_value, R_od_bar_value, R_op_bar_value, *, zero_fill=False):
+    values = (R_oa_bar_value, R_od_bar_value, R_op_bar_value)
+    if zero_fill:
+        if all(value is None for value in values):
+            return None
+        R_oa_bar_value = 0 if R_oa_bar_value is None else R_oa_bar_value
+        R_od_bar_value = 0 if R_od_bar_value is None else R_od_bar_value
+        R_op_bar_value = 0 if R_op_bar_value is None else R_op_bar_value
+    elif any(value is None for value in values):
+        return None
+
+    return data_weight['W_OA'] * R_oa_bar_value + \
+           data_weight['W_OD'] * R_od_bar_value + \
+           data_weight['W_OP'] * R_op_bar_value
 
 
 def R(year, country):
@@ -1024,15 +1079,34 @@ def R(year, country):
     R_oa_bar_value = R_oa_bar(year_str, country)
     R_od_bar_value = R_od_bar(year_str, country)
     R_op_bar_value = R_op_bar(year_str, country)
-    
-    if R_oa_bar_value is None or R_od_bar_value is None or R_op_bar_value is None:
-        result = None
-    else:
-        result = data_weight['W_OA'] * R_oa_bar_value + \
-                 data_weight['W_OD'] * R_od_bar_value + \
-                 data_weight['W_OP'] * R_op_bar_value
+
+    result = _calculate_R_from_parts(data_weight, R_oa_bar_value, R_od_bar_value, R_op_bar_value)
     
     set_cache('R', result, year_str, country)
+    return result
+
+
+def R_zero_fill(year, country):
+    '''计算缺失补零口径R'''
+    cached = get_from_cache('R_zero_fill', year, country)
+    if cached is not None:
+        return cached
+
+    year_str = str(year)
+    data_weight = _data_cache['weight']
+    R_oa_bar_value = R_oa_bar(year_str, country)
+    R_od_bar_value = R_od_bar(year_str, country)
+    R_op_bar_value = R_op_bar(year_str, country)
+
+    result = _calculate_R_from_parts(
+        data_weight,
+        R_oa_bar_value,
+        R_od_bar_value,
+        R_op_bar_value,
+        zero_fill=True,
+    )
+
+    set_cache('R_zero_fill', result, year_str, country)
     return result
 
 # ==================== 批量计算和保存函数 ====================
@@ -1070,6 +1144,7 @@ def batch_calculate_and_save():
         ('R_od_bar', R_od_bar),
         ('R_op_bar', R_op_bar),
         ('R', R),
+        ('R_zero_fill', R_zero_fill),
     ]
     
     # 计算每个函数的所有组合
@@ -1092,6 +1167,10 @@ def batch_calculate_and_save():
         # 保存到JSON
         save_to_json(func_name, results)
         print(f"  ✓ {func_name} 计算完成并已保存")
+
+    stats_files = calculate_output_statistics(_output_dir)
+    if stats_files:
+        print(f"  ✓ 统计量计算完成并已保存: {', '.join(stats_files)}")
     
     print("\n所有计算完成！")
 

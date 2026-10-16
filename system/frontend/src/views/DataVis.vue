@@ -13,13 +13,23 @@
 import { computed, inject, ref } from 'vue'
 
 const versionMode = inject('versionMode', ref('global'))
-const visAppUrl = computed(() => `/osri-vis/?data_source=${versionMode.value === 'aggregation' ? 'aggregation' : 'global'}`)
+const appBase = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+const visBasePath = `${appBase}/osri-vis/`
+const normalizeDataSource = (mode) => {
+  return ['global', 'global_plus', 'aggregation'].includes(mode) ? mode : 'global'
+}
+const visAppUrl = computed(() => {
+  const params = new URLSearchParams({
+    data_source: normalizeDataSource(versionMode.value)
+  })
+  return `${visBasePath}?${params.toString()}`
+})
 </script>
 
 <style scoped>
 .data-vis-shell {
-  height: calc(100vh - 80px);
-  min-height: calc(100vh - 80px);
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   background: white;
 }
@@ -27,20 +37,9 @@ const visAppUrl = computed(() => `/osri-vis/?data_source=${versionMode.value ===
 .vis-frame {
   width: 100%;
   height: 100%;
-  min-height: calc(100vh - 80px);
+  min-height: 0;
   border: none;
   display: block;
   background: white;
-}
-
-@media (max-width: 900px) {
-  .data-vis-shell {
-    height: calc(100vh - 148px);
-    min-height: calc(100vh - 148px);
-  }
-
-  .vis-frame {
-    min-height: calc(100vh - 148px);
-  }
 }
 </style>
